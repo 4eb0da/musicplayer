@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=MusicPlayer
+Comment=MusicPlayer
+Categories=GNOME;Audio;Music;Player;AudioVideo;
+Exec=musicplayer
+Icon=musicplayer
+Terminal=false
+Type=Application
+MimeType=application/x-ogg;application/ogg;audio/x-vorbis+ogg;audio/x-scpls;audio/x-mp3;audio/x-mpeg;audio/mpeg;audio/x-mpegurl;audio/x-flac;
