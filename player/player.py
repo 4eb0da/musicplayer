@@ -57,3 +57,9 @@ class Player(GObject.Object):
 
     def on_tags(self, bus, msg):
         pass
+
+    def get_position(self):
+        return self.pipeline.query_position(Gst.Format.TIME)[1] / Gst.MSECOND
+
+    def get_duration(self):
+        return self.pipeline.query_duration(Gst.Format.TIME)[1] / Gst.MSECOND

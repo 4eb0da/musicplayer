@@ -1,5 +1,4 @@
 from gi.repository import Gtk, GObject, Pango
-from player.track import Track
 
 class TrackList(Gtk.Box):
     def __init__(self, app):
