@@ -1,0 +1,59 @@
+from gi.repository import GObject, Gst
+import urllib.request, urllib.parse
+from .track import Track
+
+
+class Player(GObject.Object):
+    __gsignals__ = {
+        'play': (GObject.SIGNAL_RUN_FIRST, None, (object,))
+    }
+
+    def __init__(self, app):
+        GObject.Object.__init__(self)
+        self.app = app
+
+        self.__inited = False
+
+    def play(self, track):
+        self.emit('play', track)
+
+        self.init_gst()
+        self.open_file(track.fullpath)
+
+    def init_gst(self):
+        if self.__inited:
+            return
+
+        self.__inited = True
+
+        # Create GStreamer pipeline
+        self.pipeline = Gst.Pipeline()
+
+        # Create bus to get events from GStreamer pipeline
+        self.bus = self.pipeline.get_bus()
+        self.bus.add_signal_watch()
+        self.bus.connect('message::eos', self.on_eos)
+        self.bus.connect('message::error', self.on_error)
+        self.bus.connect('message::tags', self.on_tags)
+
+        # Create GStreamer elements
+        self.playbin = Gst.ElementFactory.make('playbin', None)
+
+        # Add playbin to the pipeline
+        self.pipeline.add(self.playbin)
+
+    def open_file(self, fullpath):
+        fileurl = urllib.parse.urljoin('file:', urllib.request.pathname2url(fullpath))
+
+        self.pipeline.set_state(Gst.State.NULL)
+        self.playbin.set_property('uri', fileurl)
+        self.pipeline.set_state(Gst.State.PLAYING)
+
+    def on_eos(self, bus, msg):
+        pass
+
+    def on_error(self, bus, msg):
+        pass
+
+    def on_tags(self, bus, msg):
+        pass

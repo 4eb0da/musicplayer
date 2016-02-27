@@ -1,4 +1,6 @@
 from gi.repository import Gtk
+from ui.current_track import CurrentTrack
+from ui.track_list import TrackList
 
 UI_INFO = """
 <ui>
@@ -6,7 +8,7 @@ UI_INFO = """
     <menu action='FileMenu'>
       <menuitem action='FileOpen' accel='<Primary>O'/>
       <separator />
-      <menuitem action='FileQuit' />
+      <menuitem action='FileQuit' accel='<Primary>Q'/>
     </menu>
   </menubar>
 </ui>
@@ -28,8 +30,13 @@ class MainWindow(Gtk.ApplicationWindow):
 
         menubar = uimanager.get_widget("/MenuBar")
 
+        current_track = CurrentTrack(app)
+        track_list = TrackList(app)
+
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         box.pack_start(menubar, False, False, 0)
+        box.pack_start(current_track, False, False, 0)
+        box.pack_start(track_list, False, False, 0)
 
         self.add(box)
 
@@ -54,7 +61,18 @@ class MainWindow(Gtk.ApplicationWindow):
         return uimanager
 
     def on_open(self, widget):
-        pass
+        dialog = Gtk.FileChooserDialog("Choose an audio file", self,
+            Gtk.FileChooserAction.OPEN,
+            (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
+             Gtk.STOCK_OPEN, Gtk.ResponseType.OK))
+
+        dialog.set_select_multiple(True)
+
+        response = dialog.run()
+        if response == Gtk.ResponseType.OK:
+            self.app.queue.open_files(dialog.get_filenames())
+
+        dialog.destroy()
 
     def on_menu_file_quit(self, widget):
         self.app.quit()
