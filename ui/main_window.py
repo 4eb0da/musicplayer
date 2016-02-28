@@ -1,6 +1,7 @@
 from gi.repository import Gtk
 from ui.current_track import CurrentTrack
 from ui.track_list import TrackList
+from ui.controls import Controls
 
 UI_INFO = """
 <ui>
@@ -15,12 +16,13 @@ UI_INFO = """
 </ui>
 """
 
+
 class MainWindow(Gtk.ApplicationWindow):
     def __init__(self, app):
         Gtk.Window.__init__(self, title="MusicPlayer", application=app)
         self.app = app
 
-        self.set_default_size(350, 200)
+        self.set_default_size(350, 400)
 
         action_group = Gtk.ActionGroup("actions")
 
@@ -32,11 +34,13 @@ class MainWindow(Gtk.ApplicationWindow):
         menubar = uimanager.get_widget("/MenuBar")
 
         current_track = CurrentTrack(app)
+        controls = Controls(app)
         track_list = TrackList(app)
 
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
         box.pack_start(menubar, False, False, 0)
         box.pack_start(current_track, False, False, 0)
+        box.pack_start(controls, False, False, 0)
         box.pack_start(track_list, True, True, 0)
 
         self.add(box)

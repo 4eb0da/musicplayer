@@ -1,5 +1,6 @@
 from gi.repository import Gtk, GObject, Pango
 
+
 class TrackList(Gtk.ScrolledWindow):
     def __init__(self, app):
         Gtk.ScrolledWindow.__init__(self)

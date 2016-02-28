@@ -1,5 +1,6 @@
 from gi.repository import Gtk, Pango, GObject
 
+
 class CurrentTrack(Gtk.Box):
     def __init__(self, app):
         Gtk.Box.__init__(self, orientation=Gtk.Orientation.VERTICAL, spacing=6)
@@ -40,7 +41,7 @@ class CurrentTrack(Gtk.Box):
     def update_title(self):
         self.name.set_markup("<b>" + self.current_track.name() + "</b>")
         if self.current_track.info:
-            self.info.set_text(self.current_track.info["ARTIST"][0] + " - " + self.current_track.info["ALBUM"][0])
+            self.info.set_text(self.current_track.info["ARTIST"][0] + " — " + self.current_track.info["ALBUM"][0])
 
     def on_file_update(self, discoverer, track):
         if self.current_track == track:
@@ -67,20 +68,18 @@ class CurrentTrack(Gtk.Box):
 
     def on_scale_press(self, widget, event):
         self.scale_pressed = True
+        self.app.queue.toggle_change(False)
 
     def on_scale_release(self, widget, event):
+        self.seek(event.x / self.scale.get_allocated_width() * self.app.player.get_duration())
         self.scale_pressed = False
-        self.seek(event.x / self.scale.get_allocated_width() * self.app.player.get_duration(), False)
+        self.app.queue.toggle_change(True)
 
     def on_scale_move(self, widget, scroll, value):
         self.seek(value)
 
-    def seek(self, pos, delay = True):
+    def seek(self, pos):
         if self.seek_delay is not None:
             GObject.source_remove(self.seek_delay)
-            self.seek_delay = None
-        if delay:
-            self.seek_delay = GObject.timeout_add(50, lambda: self.app.player.set_position(pos))
-        else:
-            self.app.player.set_position(pos)
+        self.seek_delay = GObject.timeout_add(50, lambda: self.app.player.set_position(pos))
         self.update_scale(pos)

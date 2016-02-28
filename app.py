@@ -27,8 +27,8 @@ class MusicPlayerApplication(Gtk.Application):
     def do_startup(self):
         Gtk.Application.do_startup(self)
         self.discoverer = Discoverer()
-        self.queue = Queue(self)
         self.player = Player(self)
+        self.queue = Queue(self)
 
         self.win = MainWindow(self)
 

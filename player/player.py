@@ -5,7 +5,8 @@ from .track import Track
 
 class Player(GObject.Object):
     __gsignals__ = {
-        'play': (GObject.SIGNAL_RUN_FIRST, None, (object,))
+        'play': (GObject.SIGNAL_RUN_FIRST, None, (object,)),
+        'eof': (GObject.SIGNAL_RUN_FIRST, None, ())
     }
 
     def __init__(self, app):
@@ -50,7 +51,7 @@ class Player(GObject.Object):
         self.pipeline.set_state(Gst.State.PLAYING)
 
     def on_eos(self, bus, msg):
-        pass
+        self.emit("eof")
 
     def on_error(self, bus, msg):
         pass
@@ -66,3 +67,9 @@ class Player(GObject.Object):
 
     def get_duration(self):
         return self.pipeline.query_duration(Gst.Format.TIME)[1] / Gst.MSECOND
+
+    def resume(self):
+        self.pipeline.set_state(Gst.State.PLAYING)
+
+    def pause(self):
+        self.pipeline.set_state(Gst.State.PAUSED)
