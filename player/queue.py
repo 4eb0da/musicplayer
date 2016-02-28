@@ -2,6 +2,7 @@ import gi
 
 from gi.repository import Gtk, GObject
 from .track import Track
+from .util import glob_music
 
 class Queue(GObject.Object):
     __gsignals__ = {
@@ -19,6 +20,9 @@ class Queue(GObject.Object):
     def open_files(self, names):
         track_list = [Track(name) for name in names]
         self.set_list(track_list)
+
+    def open_dir(self, dir):
+        self.open_files(glob_music(dir))
 
     def set_list(self, track_list):
         self.current_list = track_list

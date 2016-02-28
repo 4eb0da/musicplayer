@@ -7,6 +7,7 @@ UI_INFO = """
   <menubar name='MenuBar'>
     <menu action='FileMenu'>
       <menuitem action='FileOpen' accel='<Primary>O'/>
+      <menuitem action='DirOpen' accel='<Primary><Shift>O'/>
       <separator />
       <menuitem action='FileQuit' accel='<Primary>Q'/>
     </menu>
@@ -36,7 +37,7 @@ class MainWindow(Gtk.ApplicationWindow):
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
         box.pack_start(menubar, False, False, 0)
         box.pack_start(current_track, False, False, 0)
-        box.pack_start(track_list, False, False, 0)
+        box.pack_start(track_list, True, True, 0)
 
         self.add(box)
 
@@ -45,6 +46,8 @@ class MainWindow(Gtk.ApplicationWindow):
             ("FileMenu", None, "File"),
             ("FileOpen", Gtk.STOCK_OPEN, None, None, None,
              self.on_open),
+            ("DirOpen", None, "Open directory", "<Primary><Shift>O", None,
+             self.on_open_dir),
             ("FileQuit", Gtk.STOCK_QUIT, None, None, None,
              self.on_menu_file_quit)
         ])
@@ -71,6 +74,19 @@ class MainWindow(Gtk.ApplicationWindow):
         response = dialog.run()
         if response == Gtk.ResponseType.OK:
             self.app.queue.open_files(dialog.get_filenames())
+
+        dialog.destroy()
+
+    def on_open_dir(self, widget):
+        dialog = Gtk.FileChooserDialog("Please choose a folder", self,
+            Gtk.FileChooserAction.SELECT_FOLDER,
+            (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
+             "Select", Gtk.ResponseType.OK))
+        dialog.set_default_size(800, 400)
+
+        response = dialog.run()
+        if response == Gtk.ResponseType.OK:
+            self.app.queue.open_dir(dialog.get_filename())
 
         dialog.destroy()
 

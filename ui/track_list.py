@@ -1,14 +1,15 @@
 from gi.repository import Gtk, GObject, Pango
 
-class TrackList(Gtk.Box):
+class TrackList(Gtk.ScrolledWindow):
     def __init__(self, app):
-        Gtk.Box.__init__(self, orientation=Gtk.Orientation.VERTICAL)
+        Gtk.ScrolledWindow.__init__(self)
         self.app = app
         self.track_to_iter = {}
         self.store = Gtk.ListStore(str, object)
         self.list_view = Gtk.TreeView(model=self.store)
         self.list_view.set_reorderable(True)
         self.list_view.set_headers_visible(False)
+        self.list_view.set_vscroll_policy(Gtk.ScrollablePolicy.MINIMUM)
         self.list_view.connect("row_activated", self.on_track_activate)
 
         renderer = Gtk.CellRendererText()
@@ -16,7 +17,7 @@ class TrackList(Gtk.Box):
         column = Gtk.TreeViewColumn("Title", renderer, text=0)
         self.list_view.append_column(column)
 
-        self.pack_start(self.list_view, False, False, 0)
+        self.add(self.list_view)
 
         app.queue.connect("update", self.on_queue_update)
         app.queue.connect("track", self.on_track_change)
