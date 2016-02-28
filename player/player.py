@@ -73,3 +73,6 @@ class Player(GObject.Object):
 
     def pause(self):
         self.pipeline.set_state(Gst.State.PAUSED)
+
+    def set_volume(self, volume):
+        self.playbin.set_property("volume", volume)

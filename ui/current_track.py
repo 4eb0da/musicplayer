@@ -15,10 +15,13 @@ class CurrentTrack(Gtk.Box):
         self.scale_pressed = False
         self.scale = Gtk.Scale.new(Gtk.Orientation.HORIZONTAL, None)
         self.scale.set_draw_value(False)
+        self.volume = Gtk.VolumeButton.new()
+        self.volume.set_value(100)
 
         self.scale_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         self.scale_box.pack_start(self.time, False, False, 0)
         self.scale_box.pack_start(self.scale, True, True, 0)
+        self.scale_box.pack_start(self.volume, False, False, 0)
 
         self.pack_start(self.name, False, False, 0)
         self.pack_start(self.info, False, False, 0)
@@ -29,6 +32,7 @@ class CurrentTrack(Gtk.Box):
         self.scale.connect("button-press-event", self.on_scale_press)
         self.scale.connect("button-release-event", self.on_scale_release)
         self.scale.connect("change-value", self.on_scale_move)
+        self.volume.connect("value-changed", self.on_volume_change)
 
         GObject.timeout_add(500, self.update_scale)
 
@@ -83,3 +87,6 @@ class CurrentTrack(Gtk.Box):
             GObject.source_remove(self.seek_delay)
         self.seek_delay = GObject.timeout_add(50, lambda: self.app.player.set_position(pos))
         self.update_scale(pos)
+
+    def on_volume_change(self, scale, value):
+        self.app.player.set_volume(value)
