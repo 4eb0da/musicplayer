@@ -61,5 +61,8 @@ class Player(GObject.Object):
     def get_position(self):
         return self.pipeline.query_position(Gst.Format.TIME)[1] / Gst.MSECOND
 
+    def set_position(self, pos):
+        self.pipeline.seek_simple(Gst.Format.TIME, Gst.SeekFlags.FLUSH | Gst.SeekFlags.KEY_UNIT, pos * Gst.MSECOND)
+
     def get_duration(self):
         return self.pipeline.query_duration(Gst.Format.TIME)[1] / Gst.MSECOND

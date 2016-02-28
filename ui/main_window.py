@@ -33,7 +33,7 @@ class MainWindow(Gtk.ApplicationWindow):
         current_track = CurrentTrack(app)
         track_list = TrackList(app)
 
-        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
         box.pack_start(menubar, False, False, 0)
         box.pack_start(current_track, False, False, 0)
         box.pack_start(track_list, False, False, 0)
