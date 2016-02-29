@@ -1,4 +1,4 @@
-from gi.repository import GObject, Gst
+from gi.repository import GObject, Gst, GdkPixbuf
 import urllib.request, urllib.parse
 from .track import Track
 
@@ -6,7 +6,8 @@ from .track import Track
 class Player(GObject.Object):
     __gsignals__ = {
         'play': (GObject.SIGNAL_RUN_FIRST, None, (object,)),
-        'eof': (GObject.SIGNAL_RUN_FIRST, None, ())
+        'eof': (GObject.SIGNAL_RUN_FIRST, None, ()),
+        'cover': (GObject.SIGNAL_RUN_FIRST, None, (object,))
     }
 
     def __init__(self, app):
@@ -33,9 +34,7 @@ class Player(GObject.Object):
         # Create bus to get events from GStreamer pipeline
         self.bus = self.pipeline.get_bus()
         self.bus.add_signal_watch()
-        self.bus.connect('message::eos', self.on_eos)
-        self.bus.connect('message::error', self.on_error)
-        self.bus.connect('message::tags', self.on_tags)
+        self.bus.connect('message', self.on_message)
 
         # Create GStreamer elements
         self.playbin = Gst.ElementFactory.make('playbin', None)
@@ -50,14 +49,25 @@ class Player(GObject.Object):
         self.playbin.set_property('uri', fileurl)
         self.pipeline.set_state(Gst.State.PLAYING)
 
-    def on_eos(self, bus, msg):
-        self.emit("eof")
-
-    def on_error(self, bus, msg):
-        pass
-
-    def on_tags(self, bus, msg):
-        pass
+    def on_message(self, bus, msg):
+        struct = msg.get_structure()
+        if msg.type == Gst.MessageType.EOS:
+            self.emit("eof")
+        elif msg.type == Gst.MessageType.TAG and msg.parse_tag() and struct.has_field('taglist'):
+            taglist = struct.get_value('taglist')
+            for x in range(taglist.n_tags()):
+                name = taglist.nth_tag_name(x)
+                if name == "preview-image" or name == "image":
+                    success, sample = taglist.get_sample(name)
+                    if success:
+                        buffer = sample.get_buffer()
+                        if buffer:
+                            loader = GdkPixbuf.PixbufLoader()
+                            data = buffer.extract_dup(0, buffer.get_size())
+                            loader.write(data)
+                            pixbuf = loader.get_pixbuf()
+                            loader.close()
+                            self.emit("cover", pixbuf)
 
     def get_position(self):
         return self.pipeline.query_position(Gst.Format.TIME)[1] / Gst.MSECOND
