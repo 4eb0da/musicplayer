@@ -64,17 +64,18 @@ class CurrentTrack(Gtk.Box):
         self.scale.set_value(0)
         self.scale.set_range(0, 60000)
         self.update_title()
+        self.cover.hide()
 
     def update_title(self):
         self.name.set_markup("<b>" + self.current_track.name() + "</b>")
         if self.current_track.info:
-            self.info.set_text(self.current_track.info["ARTIST"][0] + " — " + self.current_track.info["ALBUM"][0])
+            self.info.set_text(self.current_track.info.artist + " — " + self.current_track.info.album)
 
     def on_file_update(self, discoverer, track):
         if self.current_track == track:
             self.update_title()
 
-    def update_scale(self, position = None):
+    def update_scale(self, position=None):
         if self.current_track:
             duration = self.app.player.get_duration()
             if position is None:
@@ -116,3 +117,4 @@ class CurrentTrack(Gtk.Box):
 
     def on_cover(self, player, cover):
         self.cover.set_from_pixbuf(self.scale_pixbuf(cover))
+        self.cover.show()

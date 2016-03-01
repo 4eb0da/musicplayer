@@ -5,6 +5,7 @@ gi.require_version("Gtk", "3.0")
 
 from threading import Thread, Condition
 from gi.repository import Gtk, GObject
+from .trackinfo import TrackInfo
 
 
 class Discoverer(GObject.Object):
@@ -26,11 +27,15 @@ class Discoverer(GObject.Object):
             with self.condition:
                 if not(len(self.queue)):
                     self.condition.wait()
-                items = [track for track in self.queue if not track.info]
+                items = [track for track in self.queue if not track.info and not track.incorrect_info]
                 self.queue = []
             for track in items:
-                track.info = taglib.File(track.fullpath).tags
-                GObject.idle_add(self.emit, "info", track)
+                tags = taglib.File(track.fullpath).tags
+                if TrackInfo.check_tags(tags):
+                    track.info = TrackInfo(tags)
+                    GObject.idle_add(self.emit, "info", track)
+                else:
+                    track.incorrect_info = True
 
     def add(self, tracks):
         with self.condition:

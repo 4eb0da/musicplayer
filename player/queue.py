@@ -30,7 +30,7 @@ class Queue(GObject.Object):
 
     def set_list(self, track_list):
         self.current_list = track_list
-        self.emit('update', track_list)
+        self.emit("update", track_list)
 
         if track_list:
             self.current_track = track_list[0]
@@ -40,7 +40,7 @@ class Queue(GObject.Object):
         else:
             self.current_track = None
 
-        self.emit('track', self.current_track)
+        self.emit("track", self.current_track)
 
         self.app.discoverer.add(track_list)
 
@@ -51,7 +51,7 @@ class Queue(GObject.Object):
             if tr == track:
                 self.paused = False
                 self.current_track = track
-                self.emit('track', self.current_track)
+                self.emit("track", self.current_track)
                 self.app.player.play(self.current_track)
                 return
 

@@ -5,10 +5,11 @@ class Track:
         self.filename = os.path.basename(filename)
         self.fullpath = filename
         self.info = None
+        self.incorrect_info = False
 
     def name(self):
-        if self.info and self.info["TITLE"]:
-            return self.info["TITLE"][0]
+        if self.info:
+            return self.info.title
 
         return self.filename
 
