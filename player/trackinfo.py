@@ -6,9 +6,9 @@ class TrackInfo:
     def check_tags(tags):
         return (
             tags and
-            tags["TITLE"] and tags["TITLE"][0] and
-            tags["ALBUM"] and tags["ALBUM"][0] and
-            tags["ARTIST"] and tags["ARTIST"][0]
+            tags.get("TITLE", None) and tags["TITLE"][0] and
+            tags.get("ALBUM", None) and tags["ALBUM"][0] and
+            tags.get("ARTIST", None) and tags["ARTIST"][0]
         )
 
     # russian letters encoding fix

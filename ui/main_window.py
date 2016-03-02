@@ -1,7 +1,9 @@
-from gi.repository import Gtk
+from gi.repository import Gtk, Gdk
 from ui.current_track import CurrentTrack
 from ui.track_list import TrackList
 from ui.controls import Controls
+from urllib.parse import urlparse
+from urllib.request import url2pathname
 
 UI_INFO = """
 <ui>
@@ -32,6 +34,11 @@ class MainWindow(Gtk.ApplicationWindow):
         uimanager.insert_action_group(action_group)
 
         menubar = uimanager.get_widget("/MenuBar")
+
+        self.drag_dest_set(Gtk.DestDefaults.ALL, [], Gdk.DragAction.MOVE)
+        self.drag_dest_add_uri_targets()
+        self.connect("drag-motion", self.on_drag_motion)
+        self.connect("drag-data-received", self.on_drop)
 
         current_track = CurrentTrack(app)
         controls = Controls(app)
@@ -90,9 +97,28 @@ class MainWindow(Gtk.ApplicationWindow):
 
         response = dialog.run()
         if response == Gtk.ResponseType.OK:
-            self.app.queue.open_dir(dialog.get_filename())
+            self.app.queue.open_files([dialog.get_filename()])
 
         dialog.destroy()
 
     def on_menu_file_quit(self, widget):
         self.app.quit()
+
+    def on_drag_motion(self, widget, context, x, y, time):
+        display = self.get_display()
+        device_manager = display.get_device_manager()
+        device = device_manager.get_client_pointer()
+        # win is Gdk.Window, not Gtk
+        win, x, y, mask = widget.get_window().get_device_position(device)
+        if mask & Gdk.ModifierType.CONTROL_MASK:
+            Gdk.drag_status(context, Gdk.DragAction.COPY, time)
+        else:
+            Gdk.drag_status(context, Gdk.DragAction.MOVE, time)
+        return True
+
+    def on_drop(self, widget, context, x, y, data, info, time):
+        dirs = [url2pathname(urlparse(p).path) for p in data.get_uris()]
+        if context.get_selected_action() is Gdk.DragAction.COPY:
+            self.app.queue.append_files(dirs)
+        else:
+            self.app.queue.open_files(dirs)

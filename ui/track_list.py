@@ -32,7 +32,8 @@ class TrackList(Gtk.ScrolledWindow):
         self.list_view.set_model(self.store)
 
     def on_track_change(self, queue, track):
-        self.list_view.set_cursor(self.store.get_path(self.track_to_iter[track]))
+        if track:
+            self.list_view.set_cursor(self.store.get_path(self.track_to_iter[track]))
 
     def on_track_activate(self, view, path, column):
         track = self.store[self.store.get_iter(path)][1]
