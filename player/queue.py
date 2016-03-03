@@ -4,6 +4,7 @@ from gi.repository import Gtk, GObject
 from .track import Track
 from .util import glob_music
 
+
 class Queue(GObject.Object):
     __gsignals__ = {
         'update': (GObject.SIGNAL_RUN_FIRST, None, (object,)),

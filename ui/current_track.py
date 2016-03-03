@@ -3,6 +3,7 @@ from gi.repository import Gtk, Pango, GObject, GdkPixbuf
 
 class CurrentTrack(Gtk.Box):
     MAX_IMAGE_SIZE = 40
+
     def __init__(self, app):
         Gtk.Box.__init__(self, orientation=Gtk.Orientation.VERTICAL, spacing=6)
         self.app = app
@@ -10,6 +11,7 @@ class CurrentTrack(Gtk.Box):
         self.seek_delay = None
         self.name = Gtk.Label("", xalign=0)
         self.name.set_ellipsize(Pango.EllipsizeMode.END)
+        self.name.override_font(Pango.FontDescription("bold"))
         self.info = Gtk.Label("", xalign=0)
         self.info.set_ellipsize(Pango.EllipsizeMode.END)
         self.cover = Gtk.Image()
@@ -67,7 +69,7 @@ class CurrentTrack(Gtk.Box):
         self.cover.hide()
 
     def update_title(self):
-        self.name.set_markup("<b>" + self.current_track.name() + "</b>")
+        self.name.set_text(self.current_track.name())
         if self.current_track.info:
             self.info.set_text(self.current_track.info.artist + " — " + self.current_track.info.album)
 
