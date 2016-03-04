@@ -5,7 +5,7 @@ class TrackList(Gtk.ScrolledWindow):
     def __init__(self, app):
         Gtk.ScrolledWindow.__init__(self)
         self.app = app
-        self.track_to_iter = {}
+        self.track_to_path = {}
         self.reorder_insert_position = None
         self.store = Gtk.ListStore(str, object)
         self.store.connect("row-inserted", self.on_reorder_insert)
@@ -31,22 +31,22 @@ class TrackList(Gtk.ScrolledWindow):
 
     def on_queue_update(self, queue, list):
         self.store.clear()
-        self.track_to_iter.clear()
+        self.track_to_path.clear()
         for track in list:
-            self.track_to_iter[track] = self.store.append([track.name(), track])
+            self.track_to_path[track] = self.store.get_path(self.store.append([track.name(), track]))
         self.list_view.set_model(self.store)
 
     def on_track_change(self, queue, track):
         if track:
-            self.list_view.set_cursor(self.store.get_path(self.track_to_iter[track]))
+            self.list_view.set_cursor(self.track_to_path[track])
 
     def on_track_activate(self, view, path, column):
         track = self.store[self.store.get_iter(path)][1]
         self.app.queue.set_current(track)
 
     def on_file_update(self, discoverer, track):
-        if track in self.track_to_iter:
-            self.store[self.track_to_iter[track]] = [track.name(), track]
+        if track in self.track_to_path:
+            self.store[self.store.get_iter(self.track_to_path[track])] = [track.name(), track]
 
     def on_reorder_insert(self, model, path, iter):
         self.reorder_insert_position = int(str(path))
@@ -62,3 +62,6 @@ class TrackList(Gtk.ScrolledWindow):
             # prevent error at the last pos
             GObject.idle_add(self.list_view.set_cursor, Gtk.TreePath.new_from_string(str(self.reorder_insert_position)))
             self.reorder_insert_position = None
+
+            for index, row in enumerate(self.store):
+                self.track_to_path[row[1]] = Gtk.TreePath.new_from_string(str(index))
