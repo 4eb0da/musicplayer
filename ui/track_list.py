@@ -6,11 +6,16 @@ class TrackList(Gtk.ScrolledWindow):
         Gtk.ScrolledWindow.__init__(self)
         self.app = app
         self.track_to_iter = {}
+        self.reorder_insert_position = None
         self.store = Gtk.ListStore(str, object)
+        self.store.connect("row-inserted", self.on_reorder_insert)
+        self.store.connect("row-deleted", self.on_reorder_delete)
         self.list_view = Gtk.TreeView(model=self.store)
         self.list_view.set_reorderable(True)
         self.list_view.set_headers_visible(False)
         self.list_view.set_vscroll_policy(Gtk.ScrollablePolicy.MINIMUM)
+        selection = self.list_view.get_selection()
+        selection.set_mode(Gtk.SelectionMode.MULTIPLE)
         self.list_view.connect("row_activated", self.on_track_activate)
 
         renderer = Gtk.CellRendererText()
@@ -42,3 +47,18 @@ class TrackList(Gtk.ScrolledWindow):
     def on_file_update(self, discoverer, track):
         if track in self.track_to_iter:
             self.store[self.track_to_iter[track]] = [track.name(), track]
+
+    def on_reorder_insert(self, model, path, iter):
+        self.reorder_insert_position = int(str(path))
+
+    def on_reorder_delete(self, model, path):
+        index = int(str(path))
+        if self.reorder_insert_position is not None and abs(index - self.reorder_insert_position) > 1:
+            if index > self.reorder_insert_position:
+                index -= 1
+            else:
+                self.reorder_insert_position -= 1
+            self.app.queue.reoder(index, self.reorder_insert_position)
+            # prevent error at the last pos
+            GObject.idle_add(self.list_view.set_cursor, Gtk.TreePath.new_from_string(str(self.reorder_insert_position)))
+            self.reorder_insert_position = None

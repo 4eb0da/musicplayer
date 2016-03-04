@@ -53,6 +53,11 @@ class Queue(GObject.Object):
 
         self.app.discoverer.add(track_list)
 
+    def reoder(self, from_pos, to_pos):
+        track = self.current_list[from_pos]
+        del self.current_list[from_pos]
+        self.current_list.insert(to_pos, track)
+
     def set_current(self, track):
         if self.disable_change:
             return
