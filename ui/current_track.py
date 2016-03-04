@@ -101,8 +101,8 @@ class CurrentTrack(Gtk.Box):
         self.app.queue.toggle_change(False)
 
     def on_scale_release(self, widget, event):
-        self.seek(event.x / self.scale.get_allocated_width() * self.app.player.get_duration())
         self.scale_pressed = False
+        self.seek(event.x / self.scale.get_allocated_width() * self.app.player.get_duration())
         self.app.queue.toggle_change(True)
 
     def on_scale_move(self, widget, scroll, value):
