@@ -58,6 +58,15 @@ class Queue(GObject.Object):
         del self.current_list[from_pos]
         self.current_list.insert(to_pos, track)
 
+    def remove(self, pos):
+        if self.current_track == self.current_list[pos]:
+            if len(self.current_list) > 1:
+                self.next()
+            else:
+                self.set_list([])
+                return
+        del self.current_list[pos]
+
     def set_current(self, track):
         if self.disable_change:
             return
