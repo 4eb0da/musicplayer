@@ -1,6 +1,4 @@
 from gi.repository import GObject, Gst, GdkPixbuf
-import urllib.request, urllib.parse
-from .track import Track
 
 
 class Player(GObject.Object):
@@ -31,22 +29,32 @@ class Player(GObject.Object):
         # Create GStreamer pipeline
         self.pipeline = Gst.Pipeline()
 
+        self.source = Gst.ElementFactory.make('filesrc', 'source')
+        decodebin = Gst.ElementFactory.make('decodebin', 'decodebin')
+        audioconvert = Gst.ElementFactory.make('audioconvert', 'audioconvert')
+        self.volume = Gst.ElementFactory.make('volume', 'volume')
+        self.equalizer = Gst.ElementFactory.make("equalizer-10bands", "equalizer-10bands")
+        audiosink = Gst.ElementFactory.make('autoaudiosink', 'autoaudiosink')
+
+        def on_pad_added(decodebin, pad):
+            pad.link(audioconvert.get_static_pad('sink'))
+        decodebin.connect('pad-added', on_pad_added)
+
+        [self.pipeline.add(k) for k in [self.source, decodebin, audioconvert, self.volume, self.equalizer, audiosink]]
+
+        self.source.link(decodebin)
+        audioconvert.link(self.volume)
+        self.volume.link(self.equalizer)
+        self.equalizer.link(audiosink)
+
         # Create bus to get events from GStreamer pipeline
         self.bus = self.pipeline.get_bus()
         self.bus.add_signal_watch()
         self.bus.connect('message', self.on_message)
 
-        # Create GStreamer elements
-        self.playbin = Gst.ElementFactory.make('playbin', None)
-
-        # Add playbin to the pipeline
-        self.pipeline.add(self.playbin)
-
     def open_file(self, fullpath):
-        fileurl = urllib.parse.urljoin('file:', urllib.request.pathname2url(fullpath))
-
         self.pipeline.set_state(Gst.State.NULL)
-        self.playbin.set_property('uri', fileurl)
+        self.source.set_property('location', fullpath)
         self.pipeline.set_state(Gst.State.PLAYING)
 
     def on_message(self, bus, msg):
@@ -85,4 +93,7 @@ class Player(GObject.Object):
         self.pipeline.set_state(Gst.State.PAUSED)
 
     def set_volume(self, volume):
-        self.playbin.set_property("volume", volume)
+        self.volume.set_property("volume", volume)
+
+    def set_equalizer(self, index, val):
+        self.equalizer.set_property("band" + str(index), val)

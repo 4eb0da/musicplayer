@@ -2,6 +2,8 @@ from gi.repository import Gtk, Gdk
 from ui.current_track import CurrentTrack
 from ui.track_list import TrackList
 from ui.controls import Controls
+from ui.tools import Tools
+from ui.equalizer import Equalizer
 from urllib.parse import urlparse
 from urllib.request import url2pathname
 
@@ -43,12 +45,19 @@ class MainWindow(Gtk.ApplicationWindow):
         current_track = CurrentTrack(app)
         controls = Controls(app)
         track_list = TrackList(app)
+        tools = Tools(app)
+        self.equalizer = Equalizer(app)
+
+        self.connect("show", lambda win: self.equalizer.hide())
+        tools.connect("equalizer-toggle", self.toggle_equalizer)
 
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
         box.pack_start(menubar, False, False, 0)
         box.pack_start(current_track, False, False, 0)
         box.pack_start(controls, False, False, 0)
         box.pack_start(track_list, True, True, 0)
+        box.pack_start(tools, False, False, 0)
+        box.pack_start(self.equalizer, False, False, 0)
 
         self.add(box)
 
@@ -122,3 +131,9 @@ class MainWindow(Gtk.ApplicationWindow):
             self.app.queue.append_files(dirs)
         else:
             self.app.queue.open_files(dirs)
+
+    def toggle_equalizer(self, tools, toggle):
+        if toggle:
+            self.equalizer.show()
+        else:
+            self.equalizer.hide()
