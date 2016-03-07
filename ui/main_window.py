@@ -45,8 +45,8 @@ class MainWindow(Gtk.ApplicationWindow):
         current_track = CurrentTrack(app)
         controls = Controls(app)
         track_list = TrackList(app)
-        tools = Tools(app)
         self.equalizer = Equalizer(app)
+        tools = Tools(app)
 
         self.connect("show", lambda win: self.equalizer.hide())
         tools.connect("equalizer-toggle", self.toggle_equalizer)
@@ -56,8 +56,8 @@ class MainWindow(Gtk.ApplicationWindow):
         box.pack_start(current_track, False, False, 0)
         box.pack_start(controls, False, False, 0)
         box.pack_start(track_list, True, True, 0)
-        box.pack_start(tools, False, False, 0)
         box.pack_start(self.equalizer, False, False, 0)
+        box.pack_start(tools, False, False, 0)
 
         self.add(box)
 
