@@ -3,6 +3,7 @@ from gi.repository import Gtk, Gdk, GObject
 
 class Tools(Gtk.Toolbar):
     __gsignals__ = {
+        'repeat_toggle': (GObject.SIGNAL_RUN_FIRST, None, (bool,)),
         'equalizer_toggle': (GObject.SIGNAL_RUN_FIRST, None, (bool,))
     }
 
@@ -22,9 +23,13 @@ class Tools(Gtk.Toolbar):
         style_context.add_provider_for_screen(screen, css_provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
 
         self.insert_spacer()
-        self.equalizer = self.create_tool_button("preferences-desktop-multimedia", "Equalizer")
 
-        self.equalizer.connect("clicked", self.toggle_equalizer)
+        self.repeat = self.create_tool_button("media-playlist-repeat", "Repeat")
+        self.repeat.set_active(True)
+        self.repeat.connect("clicked", lambda button: self.emit("repeat-toggle", button.get_active()))
+
+        self.equalizer = self.create_tool_button("preferences-desktop-multimedia", "Equalizer")
+        self.equalizer.connect("clicked", lambda button: self.emit("equalizer-toggle", button.get_active()))
 
     def insert_spacer(self):
         separator = Gtk.SeparatorToolItem.new()
@@ -38,6 +43,3 @@ class Tools(Gtk.Toolbar):
         button.set_icon_name(icon)
         self.insert(button, -1)
         return button
-
-    def toggle_equalizer(self, button):
-        self.emit("equalizer-toggle", button.get_active())

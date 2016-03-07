@@ -50,6 +50,7 @@ class MainWindow(Gtk.ApplicationWindow):
 
         self.connect("show", lambda win: self.equalizer.hide())
         tools.connect("equalizer-toggle", self.toggle_equalizer)
+        tools.connect("repeat-toggle", lambda tools, toggle: app.queue.toggle_repeat(toggle))
 
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
         box.pack_start(menubar, False, False, 0)

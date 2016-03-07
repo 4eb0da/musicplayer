@@ -19,8 +19,9 @@ class Queue(GObject.Object):
         self.current_track = None
         self.paused = False
         self.disable_change = False
+        self.repeat = True
 
-        app.player.connect("eof", lambda player: self.next())
+        app.player.connect("eof", lambda player: self.auto_next())
 
     def __open_files(self, names, append=False):
         track_list = [Track(name) for name in names]
@@ -78,12 +79,17 @@ class Queue(GObject.Object):
                 self.app.player.play(self.current_track)
                 return
 
-    def next(self):
+    def auto_next(self):
+        self.next(allow_at_end=self.repeat)
+
+    def next(self, allow_at_end=True):
         if self.disable_change:
             return
         cur = self.current_list.index(self.current_track)
         cur += 1
         if cur >= len(self.current_list):
+            if not allow_at_end:
+                return
             cur = 0
         self.set_current(self.current_list[cur])
 
@@ -109,3 +115,6 @@ class Queue(GObject.Object):
 
     def toggle_change(self, toggle):
         self.disable_change = not toggle
+
+    def toggle_repeat(self, repeat):
+        self.repeat = repeat
