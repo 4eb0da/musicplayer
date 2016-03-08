@@ -16,6 +16,7 @@ class TrackList(Gtk.ScrolledWindow):
         self.track_to_path = {}
         self.reorder_insert_position = None
         self.removing = False
+        self.prev_playing_track = None
 
         action_group = Gtk.ActionGroup("actions")
         self.add_actions(action_group)
@@ -25,7 +26,7 @@ class TrackList(Gtk.ScrolledWindow):
 
         self.popup = uimanager.get_widget("/PopupMenu")
 
-        self.store = Gtk.ListStore(str, object)
+        self.store = Gtk.ListStore(object, bool)
         self.store.connect("row-inserted", self.on_reorder_insert)
         self.store.connect("row-deleted", self.on_reorder_delete)
 
@@ -38,10 +39,17 @@ class TrackList(Gtk.ScrolledWindow):
         self.list_view.connect("row_activated", self.on_track_activate)
         self.list_view.connect("button-press-event", self.on_mouse_click)
 
-        renderer = Gtk.CellRendererText()
-        renderer.set_property("ellipsize", Pango.EllipsizeMode.END)
-        column = Gtk.TreeViewColumn("Title", renderer, text=0)
-        self.list_view.append_column(column)
+        renderer_pixbuf = Gtk.CellRendererPixbuf()
+        column_pixbuf = Gtk.TreeViewColumn("Now playing", renderer_pixbuf)
+        column_pixbuf.set_cell_data_func(renderer_pixbuf, self.icon_renderer)
+        self.list_view.append_column(column_pixbuf)
+
+        renderer_title = Gtk.CellRendererText()
+        renderer_title.set_property("ellipsize", Pango.EllipsizeMode.END)
+        column_title = Gtk.TreeViewColumn("Title", renderer_title)
+        column_title.set_cell_data_func(renderer_title, self.title_renderer)
+
+        self.list_view.append_column(column_title)
 
         self.add(self.list_view)
 
@@ -62,16 +70,29 @@ class TrackList(Gtk.ScrolledWindow):
 
         return uimanager
 
+    def icon_renderer(self, tree_column, cell, tree_model, iter, data):
+        icon = None
+        if tree_model[iter][1]:
+            icon = "media-playback-start-symbolic"
+        cell.set_property("icon-name", icon)
+
+    def title_renderer(self, tree_column, cell, tree_model, iter, data):
+        cell.set_property("text", tree_model[iter][0].name())
+
     def on_queue_update(self, queue, list):
         self.store.clear()
         self.track_to_path.clear()
         for track in list:
-            self.track_to_path[track] = self.store.get_path(self.store.append([track.name(), track]))
+            self.track_to_path[track] = self.store.get_path(self.store.append([track, False]))
         self.list_view.set_model(self.store)
 
     def on_track_change(self, queue, track):
         if track:
             self.list_view.set_cursor(self.track_to_path[track])
+            if self.prev_playing_track:
+                self.store[self.store.get_iter(self.track_to_path[self.prev_playing_track])][1] = False
+            self.store[self.store.get_iter(self.track_to_path[track])][1] = True
+            self.prev_playing_track = track
 
     def on_track_activate(self, view, path, column):
         track = self.store[self.store.get_iter(path)][1]
@@ -79,7 +100,7 @@ class TrackList(Gtk.ScrolledWindow):
 
     def on_file_update(self, discoverer, track):
         if track in self.track_to_path:
-            self.store[self.store.get_iter(self.track_to_path[track])] = [track.name(), track]
+            self.store[self.store.get_iter(self.track_to_path[track])][0] = track
 
     def on_reorder_insert(self, model, path, iter):
         self.reorder_insert_position = int(str(path))
