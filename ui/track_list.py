@@ -34,9 +34,9 @@ class TrackList(Gtk.ScrolledWindow):
         self.list_view.set_reorderable(True)
         self.list_view.set_headers_visible(False)
         self.list_view.set_vscroll_policy(Gtk.ScrollablePolicy.MINIMUM)
-        # selection = self.list_view.get_selection()
-        # selection.set_mode(Gtk.SelectionMode.MULTIPLE)
-        self.list_view.connect("row_activated", self.on_track_activate)
+        selection = self.list_view.get_selection()
+        selection.set_mode(Gtk.SelectionMode.MULTIPLE)
+        self.list_view.connect("row-activated", self.on_track_activate)
         self.list_view.connect("button-press-event", self.on_mouse_click)
 
         renderer_pixbuf = Gtk.CellRendererPixbuf()
@@ -79,23 +79,25 @@ class TrackList(Gtk.ScrolledWindow):
     def title_renderer(self, tree_column, cell, tree_model, iter, data):
         cell.set_property("text", tree_model[iter][0].name())
 
-    def on_queue_update(self, queue, list):
+    def on_queue_update(self, queue, tracks):
         self.store.clear()
         self.track_to_path.clear()
-        for track in list:
-            self.track_to_path[track] = self.store.get_path(self.store.append([track, False]))
+        if self.prev_playing_track not in tracks:
+            self.prev_playing_track = None
+        for track in tracks:
+            self.track_to_path[track] = self.store.get_path(self.store.append([track, track is self.prev_playing_track]))
         self.list_view.set_model(self.store)
 
     def on_track_change(self, queue, track):
         if track:
             self.list_view.set_cursor(self.track_to_path[track])
-            if self.prev_playing_track:
+            if self.prev_playing_track is not None:
                 self.store[self.store.get_iter(self.track_to_path[self.prev_playing_track])][1] = False
             self.store[self.store.get_iter(self.track_to_path[track])][1] = True
             self.prev_playing_track = track
 
     def on_track_activate(self, view, path, column):
-        track = self.store[self.store.get_iter(path)][1]
+        track = self.store[self.store.get_iter(path)][0]
         self.app.queue.set_current(track)
 
     def on_file_update(self, discoverer, track):
@@ -137,11 +139,11 @@ class TrackList(Gtk.ScrolledWindow):
             else:
                 selection.unselect_all()
 
+            return True
+
     def on_remove_from_list(self, action):
         self.removing = True
-        model, iter = self.list_view.get_selection().get_selected()
-        pos = int(str(self.store.get_path(iter)))
-        self.app.queue.remove(pos)
-        self.store.remove(iter)
-        self.update_paths()
+        store, list = self.list_view.get_selection().get_selected_rows()
+        indices = [int(str(path)) for path in list]
+        self.app.queue.remove(indices)
         self.removing = False

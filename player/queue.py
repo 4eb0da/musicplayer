@@ -59,25 +59,42 @@ class Queue(GObject.Object):
         del self.current_list[from_pos]
         self.current_list.insert(to_pos, track)
 
-    def remove(self, pos):
-        if self.current_track == self.current_list[pos]:
-            if len(self.current_list) > 1:
-                self.next()
+    def remove(self, indices):
+        new_list = []
+        removed_dict = {}
+        current_track_attempt = self.current_track
+
+        for index in indices:
+            removed_dict[index] = True
+
+        for index, track in enumerate(self.current_list):
+            if index in removed_dict:
+                if track is current_track_attempt:
+                    if len(self.current_list) > index + 1:
+                        current_track_attempt = self.current_list[index + 1]
+                    else:
+                        current_track_attempt = None
             else:
-                self.set_list([])
-                return
-        del self.current_list[pos]
+                new_list.append(track)
+
+        self.current_list = new_list
+
+        if current_track_attempt is None and len(self.current_list) > 0:
+            current_track_attempt = self.current_list[0]
+
+        self.emit("update", self.current_list)
+
+        if current_track_attempt is not self.current_track and current_track_attempt is not None:
+            self.set_current(current_track_attempt)
 
     def set_current(self, track):
         if self.disable_change:
             return
-        for tr in self.current_list:
-            if tr == track:
-                self.paused = False
-                self.current_track = track
-                self.emit("track", self.current_track)
-                self.app.player.play(self.current_track)
-                return
+
+        self.paused = False
+        self.current_track = track
+        self.emit("track", self.current_track)
+        self.app.player.play(self.current_track)
 
     def auto_next(self):
         self.next(allow_at_end=self.repeat)
