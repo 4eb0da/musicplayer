@@ -54,10 +54,22 @@ class Queue(GObject.Object):
 
         self.app.discoverer.add(track_list)
 
-    def reoder(self, from_pos, to_pos):
-        track = self.current_list[from_pos]
-        del self.current_list[from_pos]
-        self.current_list.insert(to_pos, track)
+    def reoder(self, from_indices, to_pos):
+        tracks = []
+        for index in from_indices:
+            tracks.append(self.current_list[index])
+            if index < to_pos:
+                to_pos -= 1
+
+        from_indices.sort()
+        from_indices.reverse()
+        for index in from_indices:
+            del self.current_list[index]
+
+        self.current_list = self.current_list[:to_pos] + tracks + self.current_list[to_pos:]
+        self.emit("update", self.current_list)
+
+        return to_pos
 
     def remove(self, indices):
         new_list = []
