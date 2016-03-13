@@ -13,6 +13,8 @@ class Discoverer(GObject.Object):
         'info': (GObject.SIGNAL_RUN_FIRST, None, (object,))
     }
 
+    PACK_LIMIT = 35
+
     def __init__(self):
         GObject.Object.__init__(self)
 
@@ -27,15 +29,31 @@ class Discoverer(GObject.Object):
             with self.condition:
                 if not(len(self.queue)):
                     self.condition.wait()
+
+                self.wait_idle()
                 items = [track for track in self.queue if not track.info and not track.incorrect_info]
                 self.queue = []
+
+            pack = []
             for track in items:
                 tags = taglib.File(track.fullpath).tags
-                if TrackInfo.check_tags(tags):
-                    track.info = TrackInfo(tags)
-                    GObject.idle_add(self.emit, "info", track)
-                else:
-                    track.incorrect_info = True
+                track.info = TrackInfo(track.fullpath, tags)
+                pack.append(track)
+                if len(pack) == self.PACK_LIMIT:
+                    GObject.idle_add(self.emit, "info", pack)
+                    pack = []
+                GObject.idle_add(self.emit, "info", pack)
+                self.wait_idle()
+            if len(pack):
+                GObject.idle_add(self.emit, "info", pack)
+
+    def wait_idle(self):
+        with self.condition:
+            def notify():
+                with self.condition:
+                    self.condition.notify()
+            GObject.idle_add(notify)
+            self.condition.wait()
 
     def add(self, tracks):
         with self.condition:

@@ -105,9 +105,12 @@ class TrackList(Gtk.ScrolledWindow):
         track = self.store[self.store.get_iter(path)][0]
         self.app.queue.set_current(track)
 
-    def on_file_update(self, discoverer, track):
-        if track in self.track_to_path:
-            self.store[self.store.get_iter(self.track_to_path[track])][0] = track
+    def on_file_update(self, discoverer, pack):
+        for track in pack:
+            if track in self.track_to_path:
+                path = self.track_to_path[track]
+                iter = self.store.get_iter(path)
+                self.store[iter][0] = track
 
     def update_paths(self):
         for index, row in enumerate(self.store):

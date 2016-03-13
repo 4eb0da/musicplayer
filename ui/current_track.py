@@ -72,10 +72,13 @@ class CurrentTrack(Gtk.Box):
         self.name.set_text(self.current_track.name())
         if self.current_track.info:
             self.info.set_text(self.current_track.info.artist + " — " + self.current_track.info.album)
+        else:
+            self.info.set_text("Unknown — Unknown")
 
-    def on_file_update(self, discoverer, track):
-        if self.current_track == track:
-            self.update_title()
+    def on_file_update(self, discoverer, pack):
+        for track in pack:
+            if self.current_track == track:
+                self.update_title()
 
     def update_scale(self, position=None):
         if self.current_track:

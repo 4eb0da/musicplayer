@@ -1,16 +1,8 @@
 import re
+import os
 
 
 class TrackInfo:
-    @staticmethod
-    def check_tags(tags):
-        return (
-            tags and
-            tags.get("TITLE", None) and tags["TITLE"][0] and
-            tags.get("ALBUM", None) and tags["ALBUM"][0] and
-            tags.get("ARTIST", None) and tags["ARTIST"][0]
-        )
-
     # russian letters encoding fix
     LETTERS = "абвгдеёжзийклмнопрстуфхцчшщьыъэюя"
     LETTERS += LETTERS.upper()
@@ -22,10 +14,10 @@ class TrackInfo:
             return string.encode("cp1252").decode("cp1251")
         return string
 
-    def __init__(self, tags):
-        self.title = self.convert(tags["TITLE"][0])
-        self.album = self.convert(tags["ALBUM"][0])
-        self.artist = self.convert(tags["ARTIST"][0])
+    def __init__(self, fullpath, tags):
+        self.title = self.convert("TITLE" in tags and tags["TITLE"][0] or os.path.basename(fullpath))
+        self.album = self.convert("ALBUN" in tags and tags["ALBUM"][0] or "Unknown")
+        self.artist = self.convert("ARTIST" in tags and tags["ARTIST"][0] or "Unknown")
 
     def __str__(self):
         return self.title + " - " + self.album + " - " + self.artist
