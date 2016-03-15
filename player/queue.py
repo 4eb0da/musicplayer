@@ -23,10 +23,13 @@ class Queue(GObject.Object):
 
         app.player.connect("eof", lambda player: self.auto_next())
 
-    def __open_files(self, names, append=False):
+    def __open_files(self, names, append=False, at=None):
         track_list = [Track(name) for name in names]
         if append:
-            self.current_list += track_list
+            if at is not None:
+                self.current_list = self.current_list[:at] + track_list + self.current_list[at:]
+            else:
+                self.current_list += track_list
             self.emit("update", self.current_list)
             self.app.discoverer.add(track_list)
         else:
@@ -35,8 +38,8 @@ class Queue(GObject.Object):
     def open_files(self, files):
         self.__open_files(glob_music(files))
 
-    def append_files(self, files):
-        self.__open_files(glob_music(files), True)
+    def append_files(self, files, at=None):
+        self.__open_files(glob_music(files), True, at)
 
     def set_list(self, track_list):
         self.current_list = track_list

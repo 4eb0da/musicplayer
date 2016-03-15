@@ -1,4 +1,5 @@
 from gi.repository import Gtk, Gdk, GObject, Pango
+from .util import keyboard
 
 UI_INFO = """
 <ui>
@@ -10,6 +11,10 @@ UI_INFO = """
 
 
 class TrackList(Gtk.ScrolledWindow):
+    __gsignals__ = {
+        'insert': (GObject.SIGNAL_RUN_FIRST, None, (object, int,))
+    }
+
     def __init__(self, app):
         Gtk.ScrolledWindow.__init__(self)
         self.app = app
@@ -17,6 +22,7 @@ class TrackList(Gtk.ScrolledWindow):
         self.prev_playing_track = None
         self.drag_start_x = None
         self.drag_start_y = None
+        self.drag_insert_pos = None
         self.motion_handler = None
         self.release_handler = None
         self.drag_start_win = None
@@ -42,6 +48,7 @@ class TrackList(Gtk.ScrolledWindow):
         self.list_view.connect("button-press-event", self.on_mouse_click)
         self.list_view.connect("drag-motion", self.on_drag_motion)
         self.list_view.connect("drag-drop", self.on_drag_drop)
+        self.list_view.connect("drag-data-received", self.on_drag_drop_data)
 
         renderer_pixbuf = Gtk.CellRendererPixbuf()
         column_pixbuf = Gtk.TreeViewColumn("Now playing", renderer_pixbuf)
@@ -194,35 +201,54 @@ class TrackList(Gtk.ScrolledWindow):
 
         return pos
 
+    def is_external_add(self):
+        mask = keyboard.get_mask(self)
+        return mask & Gdk.ModifierType.CONTROL_MASK and len(self.store) > 0
+
     def on_drag_motion(self, widget, context, x, y, time):
         is_self_source = context.get_source_window() is self.drag_start_win
-        # if reorder
-        if is_self_source:
+        is_external_add = self.is_external_add()
+        # if reorder or append
+        if is_self_source or is_external_add:
             path, pos = self.list_view.get_dest_row_at_pos(x, y)
             pos = self.fix_drag_pos(pos)
 
             self.list_view.set_drag_dest_row(path, pos)
-            Gdk.drag_status(context, Gdk.DragAction.MOVE, time)
+            Gdk.drag_status(context, Gdk.DragAction.COPY if is_external_add else Gdk.DragAction.MOVE, time)
             return True
 
     def on_drag_drop(self, widget, context, x, y, time):
         is_self_source = context.get_source_window() is self.drag_start_win
-        # if reorder
-        if is_self_source:
-            Gtk.drag_finish(context, True, True, time)
+        is_external_add = self.is_external_add()
+        # if reorder or append
+        if is_self_source or is_external_add:
             path, pos = self.list_view.get_dest_row_at_pos(x, y)
             pos = self.fix_drag_pos(pos)
             insert_pos = int(str(path)) + (1 if pos is Gtk.TreeViewDropPosition.AFTER else 0)
 
-            selection = self.list_view.get_selection()
-            store, list = selection.get_selected_rows()
+            if is_self_source:
+                selection = self.list_view.get_selection()
+                store, list = selection.get_selected_rows()
 
-            result_pos = self.app.queue.reoder([int(str(path)) for path in list], insert_pos)
+                result_pos = self.app.queue.reoder([int(str(path)) for path in list], insert_pos)
 
-            # select reordered rows
-            for i in range(len(list)):
-                path = Gtk.TreePath.new_from_string(str(i + result_pos))
-                selection.select_path(path)
+                # select reordered rows
+                for i in range(len(list)):
+                    path = Gtk.TreePath.new_from_string(str(i + result_pos))
+                    selection.select_path(path)
+
+                Gtk.drag_finish(context, True, True, time)
+            else:
+                targets = [target for target in context.list_targets() if target.name() == 'text/uri-list']
+                if len(targets) == 0:
+                    return False
+                self.drag_insert_pos = insert_pos
+                self.list_view.drag_get_data(context, targets[0], time)
+
+            return True
+
+    def on_drag_drop_data(self, widget, context, x, y, data, info, time):
+        self.emit("insert", data, self.drag_insert_pos)
 
     def on_remove_from_list(self, action):
         store, list = self.list_view.get_selection().get_selected_rows()

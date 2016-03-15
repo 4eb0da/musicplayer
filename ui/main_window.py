@@ -4,6 +4,7 @@ from ui.track_list import TrackList
 from ui.controls import Controls
 from ui.tools import Tools
 from ui.equalizer import Equalizer
+from .util import keyboard
 from urllib.parse import urlparse
 from urllib.request import url2pathname
 
@@ -49,6 +50,7 @@ class MainWindow(Gtk.ApplicationWindow):
         tools = Tools(app)
 
         self.connect("show", lambda win: self.equalizer.hide())
+        track_list.connect("insert", self.on_list_insert)
         tools.connect("equalizer-toggle", self.toggle_equalizer)
         tools.connect("repeat-toggle", lambda tools, toggle: app.queue.toggle_repeat(toggle))
         tools.connect("add-files", lambda tools: self.open_files(directory=False, append=True))
@@ -115,19 +117,23 @@ class MainWindow(Gtk.ApplicationWindow):
         self.app.quit()
 
     def on_drag_motion(self, widget, context, x, y, time):
-        display = self.get_display()
-        device_manager = display.get_device_manager()
-        device = device_manager.get_client_pointer()
-        # win is Gdk.Window, not Gtk
-        win, x, y, mask = widget.get_window().get_device_position(device)
+        mask = keyboard.get_mask(self)
         if mask & Gdk.ModifierType.CONTROL_MASK:
             Gdk.drag_status(context, Gdk.DragAction.COPY, time)
         else:
             Gdk.drag_status(context, Gdk.DragAction.MOVE, time)
         return True
 
+    @staticmethod
+    def drag_get_dirs(data):
+        return [url2pathname(urlparse(p).path) for p in data.get_uris()]
+
+    def on_list_insert(self, widget, data, insert_pos):
+        dirs = self.drag_get_dirs(data)
+        self.app.queue.append_files(dirs, insert_pos)
+
     def on_drop(self, widget, context, x, y, data, info, time):
-        dirs = [url2pathname(urlparse(p).path) for p in data.get_uris()]
+        dirs = self.drag_get_dirs(data)
         if context.get_selected_action() is Gdk.DragAction.COPY:
             self.app.queue.append_files(dirs)
         else:
