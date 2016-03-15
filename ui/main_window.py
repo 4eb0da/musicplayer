@@ -51,6 +51,8 @@ class MainWindow(Gtk.ApplicationWindow):
         self.connect("show", lambda win: self.equalizer.hide())
         tools.connect("equalizer-toggle", self.toggle_equalizer)
         tools.connect("repeat-toggle", lambda tools, toggle: app.queue.toggle_repeat(toggle))
+        tools.connect("add-files", lambda tools: self.open_files(directory=False, append=True))
+        tools.connect("add-dir", lambda tools: self.open_files(directory=True, append=True))
 
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
         box.pack_start(menubar, False, False, 0)
@@ -84,32 +86,30 @@ class MainWindow(Gtk.ApplicationWindow):
         self.add_accel_group(accelgroup)
         return uimanager
 
-    def on_open(self, widget):
-        dialog = Gtk.FileChooserDialog("Choose an audio file", self,
-            Gtk.FileChooserAction.OPEN,
+    def open_files(self, directory=False, append=False):
+        dialog = Gtk.FileChooserDialog("Please choose a folder" if directory else "Choose an audio file", self,
+            Gtk.FileChooserAction.SELECT_FOLDER if directory else Gtk.FileChooserAction.OPEN,
             (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
              Gtk.STOCK_OPEN, Gtk.ResponseType.OK))
+        dialog.set_default_size(800, 400)
 
         dialog.set_select_multiple(True)
 
         response = dialog.run()
         if response == Gtk.ResponseType.OK:
-            self.app.queue.open_files(dialog.get_filenames())
+            files = dialog.get_filenames()
+            if append:
+                self.app.queue.append_files(files)
+            else:
+                self.app.queue.open_files(files)
 
         dialog.destroy()
+
+    def on_open(self, widget):
+        self.open_files(directory=False, append=False)
 
     def on_open_dir(self, widget):
-        dialog = Gtk.FileChooserDialog("Please choose a folder", self,
-            Gtk.FileChooserAction.SELECT_FOLDER,
-            (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
-             "Select", Gtk.ResponseType.OK))
-        dialog.set_default_size(800, 400)
-
-        response = dialog.run()
-        if response == Gtk.ResponseType.OK:
-            self.app.queue.open_files([dialog.get_filename()])
-
-        dialog.destroy()
+        self.open_files(directory=True, append=False)
 
     def on_menu_file_quit(self, widget):
         self.app.quit()

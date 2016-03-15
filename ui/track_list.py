@@ -117,6 +117,9 @@ class TrackList(Gtk.ScrolledWindow):
             self.track_to_path[row[1]] = Gtk.TreePath.new_from_string(str(index))
 
     def on_mouse_click(self, widget, event):
+        if len(self.store) == 0:
+            return
+
         # it can be Gdk.EventType.2BUTTON_PRESS
         if event.type == Gdk.EventType.BUTTON_PRESS:
             if event.button == 3:
