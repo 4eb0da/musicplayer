@@ -1,10 +1,12 @@
 from gi.repository import Gtk, Gdk, GObject, Pango
 from .util import keyboard
+from .trackprops.trackprops import TrackProps
 
 UI_INFO = """
 <ui>
   <popup name='PopupMenu'>
     <menuitem action='RemoveFromList' />
+    <menuitem action='Properties' />
   </popup>
 </ui>
 """
@@ -18,6 +20,7 @@ class TrackList(Gtk.ScrolledWindow):
     def __init__(self, app):
         Gtk.ScrolledWindow.__init__(self)
         self.app = app
+        self.tracks = []
         self.track_to_path = {}
         self.prev_playing_track = None
         self.drag_start_x = None
@@ -70,7 +73,8 @@ class TrackList(Gtk.ScrolledWindow):
 
     def add_actions(self, action_group):
         action_group.add_actions([
-            ("RemoveFromList", None, "Remove from list", None, None, self.on_remove_from_list)
+            ("RemoveFromList", None, "Remove from list", None, None, self.on_remove_from_list),
+            ("Properties", None, "Properties", None, None, self.on_properties)
         ])
 
     def create_ui_manager(self):
@@ -93,6 +97,7 @@ class TrackList(Gtk.ScrolledWindow):
     def on_queue_update(self, queue, tracks):
         self.store.clear()
         self.track_to_path.clear()
+        self.tracks = tracks
         if self.prev_playing_track not in tracks:
             self.prev_playing_track = None
         for track in tracks:
@@ -132,11 +137,13 @@ class TrackList(Gtk.ScrolledWindow):
             if event.button == 3:
                 # if right click activate a pop-up menu
                 selection = self.list_view.get_selection()
+                path, column, cell_x, cell_y = self.list_view.get_path_at_pos(event.x, event.y)
+                if not selection.path_is_selected(path):
+                    selection.unselect_all()
+                    selection.select_path(path)
                 # store, list = selection.get_selected_rows()
                 if selection.count_selected_rows():
                     self.popup.popup(None, None, None, None, event.button, event.time)
-                else:
-                    selection.unselect_all()
 
                 return True
             elif event.button == 1:
@@ -254,3 +261,16 @@ class TrackList(Gtk.ScrolledWindow):
         store, list = self.list_view.get_selection().get_selected_rows()
         indices = [int(str(path)) for path in list]
         self.app.queue.remove(indices)
+
+    def on_properties(self, action):
+        store, list = self.list_view.get_selection().get_selected_rows()
+        tracks = [self.store[self.store.get_iter(path)][0] for path in list]
+        index = 0
+
+        if len(tracks) == 1:
+            tracks = self.tracks
+            index = int(str(list[0]))
+
+        props = TrackProps(tracks, index)
+        props.connect("change", lambda props, track: self.list_view.set_cursor(self.track_to_path[track]))
+        props.run()

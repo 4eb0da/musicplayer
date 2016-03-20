@@ -45,7 +45,7 @@ class Tools(Gtk.Toolbar):
 
         self.insert_spacer()
 
-        self.create_tool_button("view-sort-ascending", "Playlist", playlist_popup)
+        self.create_tool_button("gtk-justify-fill", "Playlist", playlist_popup)
 
         self.repeat = self.create_tool_button("media-playlist-repeat", "Repeat")
         self.repeat.set_active(True)

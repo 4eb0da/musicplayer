@@ -36,8 +36,8 @@ class Discoverer(GObject.Object):
 
             pack = []
             for track in items:
-                tags = taglib.File(track.fullpath).tags
-                track.info = TrackInfo(track.fullpath, tags)
+                file_info = taglib.File(track.fullpath)
+                track.info = TrackInfo(track.fullpath, file_info.tags, file_info)
                 pack.append(track)
                 if len(pack) == self.PACK_LIMIT:
                     GObject.idle_add(self.emit, "info", pack)

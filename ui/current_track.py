@@ -1,4 +1,5 @@
 from gi.repository import Gtk, Pango, GObject, GdkPixbuf
+from .util import formatters
 
 
 class CurrentTrack(Gtk.Box):
@@ -85,19 +86,11 @@ class CurrentTrack(Gtk.Box):
             duration = self.app.player.get_duration()
             if position is None:
                 position = self.app.player.get_position()
-            self.time.set_text(self.format_time(position) + " / " + self.format_time(duration))
+            self.time.set_text(formatters.duration(position // 1000) + " / " + formatters.duration(duration // 1000))
             if not self.scale_pressed:
                 self.scale.set_range(0, duration)
                 self.scale.set_value(position)
         return True
-
-    def format_time(self, time):
-        time = int(time / 1000)
-        mins = time // 60
-        secs = time % 60
-        if secs < 10:
-            secs = "0" + str(secs)
-        return str(mins) + ":" + str(secs)
 
     def on_scale_press(self, widget, event):
         self.scale_pressed = True
