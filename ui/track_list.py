@@ -49,6 +49,7 @@ class TrackList(Gtk.ScrolledWindow):
         self.list_view.drag_dest_set(0, None, 0)
         self.list_view.connect("row-activated", self.on_track_activate)
         self.list_view.connect("button-press-event", self.on_mouse_click)
+        self.list_view.connect("popup-menu", self.on_popup_menu)
         self.list_view.connect("drag-motion", self.on_drag_motion)
         self.list_view.connect("drag-drop", self.on_drag_drop)
         self.list_view.connect("drag-data-received", self.on_drag_drop_data)
@@ -134,7 +135,7 @@ class TrackList(Gtk.ScrolledWindow):
 
         # it can be Gdk.EventType.2BUTTON_PRESS
         if event.type == Gdk.EventType.BUTTON_PRESS:
-            if event.button == 3:
+            if event.button == Gdk.BUTTON_SECONDARY:
                 # if right click activate a pop-up menu
                 selection = self.list_view.get_selection()
                 path, column, cell_x, cell_y = self.list_view.get_path_at_pos(event.x, event.y)
@@ -146,7 +147,7 @@ class TrackList(Gtk.ScrolledWindow):
                     self.popup.popup(None, None, None, None, event.button, event.time)
 
                 return True
-            elif event.button == 1:
+            elif event.button == Gdk.BUTTON_PRIMARY:
                 path, column, cell_x, cell_y = self.list_view.get_path_at_pos(event.x, event.y)
                 selection = self.list_view.get_selection()
                 has_modifier = event.state & Gdk.ModifierType.CONTROL_MASK or event.state & Gdk.ModifierType.SHIFT_MASK
@@ -172,6 +173,11 @@ class TrackList(Gtk.ScrolledWindow):
                 self.motion_handler = self.list_view.connect("motion-notify-event", self.on_mouse_move)
                 self.release_handler = self.list_view.connect("button-release-event", self.on_mouse_release)
                 return True
+
+    def on_popup_menu(self, widget):
+        selection = self.list_view.get_selection()
+        if selection.count_selected_rows() > 0:
+            self.popup.popup(None, None, None, None, Gdk.BUTTON_SECONDARY, Gtk.get_current_event_time())
 
     def on_mouse_move(self, widget, event):
         if self.drag_check_threshold(self.drag_start_x, self.drag_start_y, event.x, event.y):

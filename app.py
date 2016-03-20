@@ -16,6 +16,7 @@ from player.discoverer import Discoverer
 GObject.threads_init()
 Gst.init("")
 
+
 class MusicPlayerApplication(Gtk.Application):
 
     def __init__(self):
