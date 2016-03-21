@@ -20,11 +20,11 @@ class CurrentTrack(Gtk.Box):
         self.info = Gtk.Label("", xalign=0)
         self.info.set_ellipsize(Pango.EllipsizeMode.END)
 
-        cover_button = Gtk.Button.new()
-        cover_button.set_property("relief", Gtk.ReliefStyle.NONE)
-        cover_button.set_can_focus(False)
+        self.cover_button = Gtk.Button.new()
+        self.cover_button.set_property("relief", Gtk.ReliefStyle.NONE)
+        self.cover_button.set_can_focus(False)
         self.cover = Gtk.Image()
-        cover_button.set_image(self.cover)
+        self.cover_button.set_image(self.cover)
 
         self.time = Gtk.Label("0:00 / 0:00", xalign=0)
         self.scale_pressed = False
@@ -39,7 +39,7 @@ class CurrentTrack(Gtk.Box):
 
         self.top_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         self.top_box.pack_start(self.info_box, True, True, 6)
-        self.top_box.pack_start(cover_button, False, False, 0)
+        self.top_box.pack_start(self.cover_button, False, False, 0)
 
         self.scale_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         self.scale_box.pack_start(self.time, False, False, 6)
@@ -52,7 +52,7 @@ class CurrentTrack(Gtk.Box):
         app.player.connect("play", self.on_track_change)
         app.player.connect("cover", self.on_cover)
         app.discoverer.connect("info", self.on_file_update)
-        cover_button.connect("clicked", self.on_cover_press)
+        self.cover_button.connect("clicked", self.on_cover_press)
         # fix ubuntu 12.04 scale click working as step
         self.scale.connect("button-press-event", self.on_scale_press)
         self.scale.connect("button-release-event", self.on_scale_release)
@@ -79,7 +79,7 @@ class CurrentTrack(Gtk.Box):
         self.scale.set_value(0)
         self.scale.set_range(0, 60000)
         self.update_title()
-        self.cover.hide()
+        self.cover_button.hide()
 
     def update_title(self):
         self.name.set_text(self.current_track.name())
@@ -133,4 +133,4 @@ class CurrentTrack(Gtk.Box):
     def on_cover(self, player, cover):
         self.full_cover = cover
         self.cover.set_from_pixbuf(self.scale_pixbuf(cover))
-        self.cover.show()
+        self.cover_button.show()

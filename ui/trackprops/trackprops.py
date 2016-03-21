@@ -30,7 +30,9 @@ class TrackProps(GObject.Object):
 
     def run(self):
         self.dialog.run()
-        self.dialog.hide()
+
+    def destroy(self):
+        self.dialog.destroy()
 
     def on_close_clicked(self, button):
         self.dialog.response(Gtk.ResponseType.CLOSE)
@@ -67,7 +69,6 @@ class TrackProps(GObject.Object):
         self.builder.get_object("author").set_text(self.selected.info.author)
         self.builder.get_object("url").set_text(self.selected.info.url)
         self.builder.get_object("comment").get_buffer().set_text(self.selected.info.comment)
-
 
         self.builder.get_object("filename").set_text(self.selected.filename)
         self.builder.get_object("file_size").set_text("{:.2f} MB".format(os.stat(self.selected.fullpath).st_size / 1024 / 1024))

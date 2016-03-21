@@ -37,16 +37,19 @@ class Controls(Gtk.Toolbar):
 
     def on_play(self, button):
         self.app.queue.play_pause()
-        if self.app.queue.is_paused():
-            self.play.set_stock_id(Gtk.STOCK_MEDIA_PLAY)
-            self.play.set_tooltip_text("Play")
-        else:
+        self.toggle_button(self.app.queue.is_paused())
+
+    def toggle_button(self, is_playing):
+        if is_playing:
             self.play.set_stock_id(Gtk.STOCK_MEDIA_PAUSE)
             self.play.set_tooltip_text("Pause")
+        else:
+            self.play.set_stock_id(Gtk.STOCK_MEDIA_PLAY)
+            self.play.set_tooltip_text("Play")
 
-    def on_track(self, queue, list):
-        self.previous.set_sensitive(True)
-        self.play.set_sensitive(True)
-        self.next.set_sensitive(True)
-        self.play.set_stock_id(Gtk.STOCK_MEDIA_PAUSE)
-        self.play.set_tooltip_text("Pause")
+    def on_track(self, queue, track):
+        has_track = bool(track)
+        self.previous.set_sensitive(has_track)
+        self.play.set_sensitive(has_track)
+        self.next.set_sensitive(has_track)
+        self.toggle_button(has_track)

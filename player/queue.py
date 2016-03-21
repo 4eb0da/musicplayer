@@ -26,6 +26,8 @@ class Queue(GObject.Object):
     def __open_files(self, names, append=False, at=None):
         track_list = [Track(name) for name in names]
         if append:
+            if not track_list:
+                return
             if at is not None:
                 self.current_list = self.current_list[:at] + track_list + self.current_list[at:]
             else:
