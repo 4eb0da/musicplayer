@@ -82,11 +82,15 @@ class CurrentTrack(Gtk.Box):
         self.cover_button.hide()
 
     def update_title(self):
-        self.name.set_text(self.current_track.name())
+        self.name.set_text(self.current_track.name() or "Unknown")
+        self.name.set_tooltip_text(self.current_track.name())
+        info = ""
         if self.current_track.info:
-            self.info.set_text(self.current_track.info.artist + " — " + self.current_track.info.album)
+            info = (self.current_track.info.artist or "Unknown") + " — " + (self.current_track.info.album or "Unknown")
         else:
-            self.info.set_text("Unknown — Unknown")
+            info = "Unknown — Unknown"
+        self.info.set_text(info)
+        self.info.set_tooltip_text(info)
 
     def on_file_update(self, discoverer, pack):
         for track in pack:

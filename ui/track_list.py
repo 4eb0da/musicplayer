@@ -278,7 +278,7 @@ class TrackList(Gtk.ScrolledWindow):
             index = int(str(list[0]))
 
         def show_dialog():
-            props = TrackProps(tracks, index)
+            props = TrackProps(self.app, tracks, index)
             props.connect("change", lambda props, track: self.list_view.set_cursor(self.track_to_path[track]))
             props.run()
             props.destroy()

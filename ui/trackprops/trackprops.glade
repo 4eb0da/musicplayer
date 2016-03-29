@@ -1,67 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <interface>
   <!-- interface-requires gtk+ 3.0 -->
-  <object class="GtkImage" id="image1">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="tooltip_text" translatable="yes">Open containing folder</property>
-    <property name="stock">gtk-open</property>
-    <property name="icon-size">1</property>
-  </object>
-  <object class="GtkImage" id="image10">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="stock">gtk-apply</property>
-    <property name="icon-size">1</property>
-  </object>
-  <object class="GtkImage" id="image11">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="stock">gtk-apply</property>
-    <property name="icon-size">1</property>
-  </object>
-  <object class="GtkImage" id="image12">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="stock">gtk-apply</property>
-    <property name="icon-size">1</property>
-  </object>
-  <object class="GtkImage" id="image2">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="stock">gtk-apply</property>
-    <property name="icon-size">1</property>
-  </object>
-  <object class="GtkImage" id="image3">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="stock">gtk-apply</property>
-    <property name="icon-size">1</property>
-  </object>
-  <object class="GtkImage" id="image4">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="stock">gtk-apply</property>
-    <property name="icon-size">1</property>
-  </object>
-  <object class="GtkImage" id="image5">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="stock">gtk-apply</property>
-    <property name="icon-size">1</property>
-  </object>
-  <object class="GtkImage" id="image6">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="stock">gtk-apply</property>
-    <property name="icon-size">1</property>
-  </object>
-  <object class="GtkImage" id="image7">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="stock">gtk-apply</property>
-    <property name="icon-size">1</property>
-  </object>
   <object class="GtkDialog" id="dialog1">
     <property name="can_focus">False</property>
     <property name="border_width">5</property>
@@ -157,7 +96,7 @@
               <object class="GtkNotebook" id="notebook1">
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
-                <property name="margin_bottom">20</property>
+                <property name="margin_bottom">10</property>
                 <child>
                   <object class="GtkGrid" id="grid1">
                     <property name="visible">True</property>
@@ -195,24 +134,6 @@
                       </object>
                       <packing>
                         <property name="left_attach">1</property>
-                        <property name="top_attach">0</property>
-                        <property name="width">1</property>
-                        <property name="height">1</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="GtkButton" id="open1">
-                        <property name="use_action_appearance">False</property>
-                        <property name="visible">True</property>
-                        <property name="sensitive">False</property>
-                        <property name="can_focus">True</property>
-                        <property name="receives_default">True</property>
-                        <property name="use_action_appearance">False</property>
-                        <property name="image">image2</property>
-                        <property name="relief">none</property>
-                      </object>
-                      <packing>
-                        <property name="left_attach">2</property>
                         <property name="top_attach">0</property>
                         <property name="width">1</property>
                         <property name="height">1</property>
@@ -285,12 +206,13 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkButton" id="open2">
+                      <object class="GtkButton" id="artist_sync">
                         <property name="use_action_appearance">False</property>
                         <property name="visible">True</property>
                         <property name="sensitive">False</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
+                        <property name="tooltip_text" translatable="yes">Sync all tracks</property>
                         <property name="use_action_appearance">False</property>
                         <property name="image">image3</property>
                         <property name="relief">none</property>
@@ -303,12 +225,13 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkButton" id="open3">
+                      <object class="GtkButton" id="album_sync">
                         <property name="use_action_appearance">False</property>
                         <property name="visible">True</property>
                         <property name="sensitive">False</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
+                        <property name="tooltip_text" translatable="yes">Sync all tracks</property>
                         <property name="use_action_appearance">False</property>
                         <property name="image">image4</property>
                         <property name="relief">none</property>
@@ -321,12 +244,13 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkButton" id="open4">
+                      <object class="GtkButton" id="year_sync">
                         <property name="use_action_appearance">False</property>
                         <property name="visible">True</property>
                         <property name="sensitive">False</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
+                        <property name="tooltip_text" translatable="yes">Sync all tracks</property>
                         <property name="use_action_appearance">False</property>
                         <property name="image">image5</property>
                         <property name="relief">none</property>
@@ -339,30 +263,13 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkButton" id="open5">
+                      <object class="GtkButton" id="genre_sync">
                         <property name="use_action_appearance">False</property>
                         <property name="visible">True</property>
                         <property name="sensitive">False</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
-                        <property name="use_action_appearance">False</property>
-                        <property name="image">image6</property>
-                        <property name="relief">none</property>
-                      </object>
-                      <packing>
-                        <property name="left_attach">2</property>
-                        <property name="top_attach">4</property>
-                        <property name="width">1</property>
-                        <property name="height">1</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="GtkButton" id="open6">
-                        <property name="use_action_appearance">False</property>
-                        <property name="visible">True</property>
-                        <property name="sensitive">False</property>
-                        <property name="can_focus">True</property>
-                        <property name="receives_default">True</property>
+                        <property name="tooltip_text" translatable="yes">Sync all tracks</property>
                         <property name="use_action_appearance">False</property>
                         <property name="image">image7</property>
                         <property name="relief">none</property>
@@ -547,12 +454,13 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkButton" id="open7">
+                      <object class="GtkButton" id="url_sync">
                         <property name="use_action_appearance">False</property>
                         <property name="visible">True</property>
                         <property name="sensitive">False</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
+                        <property name="tooltip_text" translatable="yes">Sync all tracks</property>
                         <property name="use_action_appearance">False</property>
                         <property name="image">image9</property>
                         <property name="relief">none</property>
@@ -598,12 +506,13 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkButton" id="open8">
+                      <object class="GtkButton" id="album_artist_sync">
                         <property name="use_action_appearance">False</property>
                         <property name="visible">True</property>
                         <property name="sensitive">False</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
+                        <property name="tooltip_text" translatable="yes">Sync all tracks</property>
                         <property name="use_action_appearance">False</property>
                         <property name="image">image10</property>
                         <property name="relief">none</property>
@@ -634,9 +543,6 @@
                       </packing>
                     </child>
                     <child>
-                      <placeholder/>
-                    </child>
-                    <child>
                       <object class="GtkEntry" id="composer">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
@@ -652,12 +558,13 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkButton" id="open9">
+                      <object class="GtkButton" id="composer_sync">
                         <property name="use_action_appearance">False</property>
                         <property name="visible">True</property>
                         <property name="sensitive">False</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
+                        <property name="tooltip_text" translatable="yes">Sync all tracks</property>
                         <property name="use_action_appearance">False</property>
                         <property name="image">image11</property>
                         <property name="relief">none</property>
@@ -703,12 +610,13 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkButton" id="open10">
+                      <object class="GtkButton" id="author_sync">
                         <property name="use_action_appearance">False</property>
                         <property name="visible">True</property>
                         <property name="sensitive">False</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
+                        <property name="tooltip_text" translatable="yes">Sync all tracks</property>
                         <property name="use_action_appearance">False</property>
                         <property name="image">image12</property>
                         <property name="relief">none</property>
@@ -719,6 +627,15 @@
                         <property name="width">1</property>
                         <property name="height">1</property>
                       </packing>
+                    </child>
+                    <child>
+                      <placeholder/>
+                    </child>
+                    <child>
+                      <placeholder/>
+                    </child>
+                    <child>
+                      <placeholder/>
                     </child>
                   </object>
                 </child>
@@ -899,11 +816,24 @@
               </packing>
             </child>
             <child>
+              <object class="GtkProgressBar" id="progress">
+                <property name="can_focus">False</property>
+                <property name="no_show_all">True</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">True</property>
+                <property name="position">2</property>
+              </packing>
+            </child>
+            <child>
               <object class="GtkButtonBox" id="buttonbox2">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <property name="valign">end</property>
+                <property name="margin_top">10</property>
                 <property name="vexpand">True</property>
+                <property name="spacing">8</property>
                 <property name="layout_style">end</property>
                 <child>
                   <object class="GtkButton" id="prev">
@@ -952,16 +882,15 @@
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkButton" id="close">
-                    <property name="label" translatable="yes">Close</property>
+                  <object class="GtkButton" id="save">
+                    <property name="label">gtk-save</property>
                     <property name="use_action_appearance">False</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
-                    <property name="can_default">True</property>
-                    <property name="has_default">True</property>
-                    <property name="receives_default">True</property>
+                    <property name="receives_default">False</property>
                     <property name="use_action_appearance">False</property>
-                    <signal name="clicked" handler="on_close_clicked" swapped="no"/>
+                    <property name="use_stock">True</property>
+                    <signal name="clicked" handler="on_save_clicked" swapped="no"/>
                   </object>
                   <packing>
                     <property name="expand">False</property>
@@ -969,11 +898,30 @@
                     <property name="position">2</property>
                   </packing>
                 </child>
+                <child>
+                  <object class="GtkButton" id="close">
+                    <property name="label">gtk-cancel</property>
+                    <property name="use_action_appearance">False</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="can_default">True</property>
+                    <property name="has_default">True</property>
+                    <property name="receives_default">True</property>
+                    <property name="use_action_appearance">False</property>
+                    <property name="use_stock">True</property>
+                    <signal name="clicked" handler="on_close_clicked" swapped="no"/>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">True</property>
+                    <property name="position">3</property>
+                  </packing>
+                </child>
               </object>
               <packing>
                 <property name="expand">False</property>
                 <property name="fill">True</property>
-                <property name="position">2</property>
+                <property name="position">3</property>
               </packing>
             </child>
           </object>
@@ -985,6 +933,55 @@
         </child>
       </object>
     </child>
+  </object>
+  <object class="GtkImage" id="image1">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="tooltip_text" translatable="yes">Open containing folder</property>
+    <property name="stock">gtk-open</property>
+    <property name="icon-size">1</property>
+  </object>
+  <object class="GtkImage" id="image10">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="stock">gtk-apply</property>
+    <property name="icon-size">1</property>
+  </object>
+  <object class="GtkImage" id="image11">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="stock">gtk-apply</property>
+    <property name="icon-size">1</property>
+  </object>
+  <object class="GtkImage" id="image12">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="stock">gtk-apply</property>
+    <property name="icon-size">1</property>
+  </object>
+  <object class="GtkImage" id="image3">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="stock">gtk-apply</property>
+    <property name="icon-size">1</property>
+  </object>
+  <object class="GtkImage" id="image4">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="stock">gtk-apply</property>
+    <property name="icon-size">1</property>
+  </object>
+  <object class="GtkImage" id="image5">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="stock">gtk-apply</property>
+    <property name="icon-size">1</property>
+  </object>
+  <object class="GtkImage" id="image7">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="stock">gtk-apply</property>
+    <property name="icon-size">1</property>
   </object>
   <object class="GtkImage" id="image8">
     <property name="visible">True</property>
