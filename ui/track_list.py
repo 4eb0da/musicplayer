@@ -39,7 +39,8 @@ class TrackList(Gtk.ScrolledWindow):
 
         self.popup = uimanager.get_widget("/PopupMenu")
 
-        self.store = Gtk.ListStore(object, bool)
+        # track, is_playing, search_text
+        self.store = Gtk.ListStore(object, bool, str)
 
         self.list_view = Gtk.TreeView(model=self.store)
         self.list_view.set_headers_visible(False)
@@ -103,15 +104,18 @@ class TrackList(Gtk.ScrolledWindow):
             self.prev_playing_track = None
         for track in tracks:
             self.track_to_path[track] = self.store.get_path(
-                self.store.append([track, track is self.prev_playing_track]))
+                self.store.append([track, track is self.prev_playing_track, track.name()]))
         self.list_view.set_model(self.store)
+        self.list_view.set_search_column(2)
 
     def on_track_change(self, queue, track):
         if track:
             self.list_view.set_cursor(self.track_to_path[track])
             if self.prev_playing_track is not None:
                 self.store[self.store.get_iter(self.track_to_path[self.prev_playing_track])][1] = False
-            self.store[self.store.get_iter(self.track_to_path[track])][1] = True
+            iter = self.store.get_iter(self.track_to_path[track])
+            self.store[iter][1] = True
+            self.store[iter][2] = track.name()
             self.prev_playing_track = track
 
     def on_track_activate(self, view, path, column):
@@ -124,6 +128,7 @@ class TrackList(Gtk.ScrolledWindow):
                 path = self.track_to_path[track]
                 iter = self.store.get_iter(path)
                 self.store[iter][0] = track
+                self.store[iter][2] = track.name()
 
     def update_paths(self):
         for index, row in enumerate(self.store):

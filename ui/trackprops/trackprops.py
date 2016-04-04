@@ -1,7 +1,9 @@
 from gi.repository import Gtk, Gio, GObject
 from urllib.request import pathname2url
 from ui.util.formatters import duration
+from threading import Thread
 import os
+import time
 
 
 class TrackProps(GObject.Object):
@@ -32,6 +34,8 @@ class TrackProps(GObject.Object):
                 empty_tracks.add(track)
 
         if empty_tracks:
+            handler_id = None
+
             def update(discoverer, updated):
                 for track in updated:
                     if track in empty_tracks:
@@ -39,8 +43,8 @@ class TrackProps(GObject.Object):
 
                 if not empty_tracks:
                     self.init_synced_fields()
-                    app.discoverer.disconnect("info", update)
-            app.discoverer.connect("info", update)
+                    app.discoverer.disconnect(handler_id)
+            handler_id = app.discoverer.connect("info", update)
 
         self.dialog = self.builder.get_object("dialog1")
 
@@ -165,7 +169,8 @@ class TrackProps(GObject.Object):
             for track in self.tracks:
                 unique_vals.add(self.get_track_attr(field, track))
             sync_button = self.builder.get_object(field + "_sync")
-            sync_button.set_sensitive(len(unique_vals) > 1)
+            if sync_button:
+                sync_button.set_sensitive(len(unique_vals) > 1)
 
     def save_to_map(self, track, field, val):
         if track not in self.saved_map:
@@ -176,13 +181,32 @@ class TrackProps(GObject.Object):
     def on_save_clicked(self, button):
         self.dialog.set_modal(True)
 
+        count = len(self.saved_map)
+
+        if count == 0:
+            self.dialog.response(Gtk.ResponseType.APPLY)
+            return
+
+        def update_progressbar(done):
+            progressbar.set_text("{} / {}".format(done, count))
+            progressbar.set_fraction(done / count)
+
+        def thread_run(discoverer, saved_map):
+            for index, track in enumerate(saved_map):
+                discoverer.save_tags(track, saved_map[track])
+                GObject.idle_add(update_progressbar, index)
+
+                if index % 20 == 0:
+                    time.sleep(0.01)
+            GObject.idle_add(thread_done,)
+
+        def thread_done():
+            self.dialog.response(Gtk.ResponseType.APPLY)
+
         progressbar = self.builder.get_object("progress")
-        progressbar.set_text("{} / {}".format(0, len(self.saved_map)))
+        progressbar.set_show_text(True)
+        update_progressbar(0)
         progressbar.show()
 
-        for index, track in enumerate(self.saved_map):
-            self.app.discoverer.save_tags(track, self.saved_map[track])
-            progressbar.set_text("{} / {}".format(index, len(self.saved_map)))
-            progressbar.set_fraction(index / len(self.saved_map))
-
-        self.dialog.response(Gtk.ResponseType.APPLY)
+        thread = Thread(target=thread_run, args=(self.app.discoverer, self.saved_map,))
+        thread.start()

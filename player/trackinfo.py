@@ -35,7 +35,16 @@ class TrackInfo:
         self.genre = get("GENRE") or ""
         self.year = get("DATE") or ""
         self.url = get("URL")
-        self.comment = self.convert(get("COMMENT") or get("COMMENT:ID3V1"))
+
+        self.comment_source = "COMMENT"
+        self.comment = ""
+        for field in ["COMMENT", "COMMENT:ID3V1", "SUBTITLE"]:
+            val = get(field)
+            if val:
+                val = self.convert(val)
+                self.comment_source = field
+                self.comment = val
+                break
 
         self.audio = {
             "channels": file_info.channels,
@@ -56,7 +65,7 @@ class TrackInfo:
             if prev_val != val:
                 if val:
                     file_info.tags[name] = [val]
-                else:
+                elif name in file_info.tags:
                     del file_info.tags[name]
                 setattr(self, prop, val)
 
@@ -71,4 +80,10 @@ class TrackInfo:
         set_prop("genre", "GENRE")
         set_prop("year", "DATE")
         set_prop("url", "URL")
-        set_prop("comment", "COMMENT")
+
+        if "comment" in vals_dict and self.comment != vals_dict["comment"]:
+            if vals_dict["comment"]:
+                file_info.tags[self.comment_source] = [vals_dict["comment"]]
+            else:
+                del file_info.tags[self.comment_source]
+            self.comment = vals_dict["comment"]
