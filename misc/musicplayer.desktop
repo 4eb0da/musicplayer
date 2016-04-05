@@ -2,7 +2,7 @@
 Name=MusicPlayer
 Comment=MusicPlayer
 Categories=GNOME;Audio;Music;Player;AudioVideo;
-Exec=musicplayer
+Exec=app.py
 Icon=musicplayer
 Terminal=false
 Type=Application
