@@ -20,6 +20,8 @@ class TrackProps(GObject.Object):
         self.selected_index = selected
         self.synced_fields = []
         self.saved_map = {}
+        self.destroyed = False
+        self.missing_infos = set()
 
         self.builder = Gtk.Builder()
         self.builder.add_from_file(os.path.join(os.path.dirname(os.path.abspath(__file__)), "trackprops.glade"))
@@ -35,16 +37,26 @@ class TrackProps(GObject.Object):
 
         if empty_tracks:
             handler_id = None
+            indicator = self.builder.get_object("indicator")
 
             def update(discoverer, updated):
                 for track in updated:
                     if track in empty_tracks:
                         empty_tracks.remove(track)
+                        if self.selected == track:
+                            self.update_selected_track()
+                    if track in self.missing_infos:
+                        self.missing_infos.remove(track)
+                        if not self.missing_infos:
+                            self.save()
 
                 if not empty_tracks:
-                    self.init_synced_fields()
                     app.discoverer.disconnect(handler_id)
+                    indicator.hide()
+                    self.init_synced_fields()
+
             handler_id = app.discoverer.connect("info", update)
+            indicator.show()
 
         self.dialog = self.builder.get_object("dialog1")
 
@@ -57,6 +69,7 @@ class TrackProps(GObject.Object):
         self.dialog.run()
 
     def destroy(self):
+        self.destroyed = True
         self.dialog.destroy()
 
     def on_close_clicked(self, button):
@@ -83,13 +96,18 @@ class TrackProps(GObject.Object):
 
         if track in self.saved_map and field in self.saved_map[track]:
             return self.saved_map[track][field]
+        if not track.info:
+            return ""
+
         return getattr(track.info, field)
 
     def select_track(self, index):
         self.selected = self.tracks[index]
         self.selected_index = index
+        self.update_selected_track()
 
-        self.dialog.set_title("{} [{}/{}]".format(self.get_track_attr("title") or "Unknown", index + 1, len(self.tracks)))
+    def update_selected_track(self):
+        self.dialog.set_title("{} [{}/{}]".format(self.get_track_attr("title") or "Unknown", self.selected_index + 1, len(self.tracks)))
 
         self.builder.get_object("title").set_text(self.get_track_attr("title"))
         self.builder.get_object("number").set_text(str(self.get_track_attr("number")))
@@ -99,9 +117,15 @@ class TrackProps(GObject.Object):
 
         self.builder.get_object("filename").set_text(self.selected.filename)
         self.builder.get_object("file_size").set_text("{:.2f} MB".format(os.stat(self.selected.fullpath).st_size / 1024 / 1024))
-        self.builder.get_object("duration").set_text(duration(self.selected.info.audio["duration"]))
-        self.builder.get_object("channels").set_text(str(self.selected.info.audio["channels"]))
-        self.builder.get_object("bitrate").set_text(str(self.selected.info.audio["bitrate"]) + " kbps")
+
+        if self.selected.info:
+            self.builder.get_object("duration").set_text(duration(self.selected.info.audio["duration"]))
+            self.builder.get_object("channels").set_text(str(self.selected.info.audio["channels"]))
+            self.builder.get_object("bitrate").set_text(str(self.selected.info.audio["bitrate"]) + " kbps")
+        else:
+            self.builder.get_object("duration").set_text("")
+            self.builder.get_object("channels").set_text("")
+            self.builder.get_object("bitrate").set_text("")
 
         self.emit("change", self.selected)
 
@@ -187,26 +211,69 @@ class TrackProps(GObject.Object):
             self.dialog.response(Gtk.ResponseType.APPLY)
             return
 
+        progressbar = self.builder.get_object("progress")
+        progressbar.set_show_text(True)
+        progressbar.show()
+        self.disable_all()
+
+        self.missing_infos = set([track for track in self.saved_map if not track.info])
+        if self.missing_infos:
+            progressbar.set_text("Waiting for track info")
+        else:
+            self.save()
+
+    def disable_all(self):
+        fields = [
+            "title",
+            "artist",
+            "album",
+            "year",
+            "number",
+            "genre",
+            "album_artist",
+            "composer",
+            "author",
+            "url",
+            "comment",
+            "artist_sync",
+            "album_sync",
+            "year_sync",
+            "genre_sync",
+            "album_artist_sync",
+            "composer_sync",
+            "author_sync",
+            "url_sync",
+            "prev",
+            "next",
+            "save"
+        ]
+
+        for field in fields:
+            self.builder.get_object(field).set_sensitive(False)
+
+    def save(self):
+        progressbar = self.builder.get_object("progress")
+        count = len(self.saved_map)
+
         def update_progressbar(done):
             progressbar.set_text("{} / {}".format(done, count))
             progressbar.set_fraction(done / count)
 
         def thread_run(discoverer, saved_map):
             for index, track in enumerate(saved_map):
+                if self.destroyed:
+                    return
+
                 discoverer.save_tags(track, saved_map[track])
                 GObject.idle_add(update_progressbar, index)
 
-                if index % 20 == 0:
+                if (index + 1) % 20 == 0:
                     time.sleep(0.01)
             GObject.idle_add(thread_done,)
 
         def thread_done():
             self.dialog.response(Gtk.ResponseType.APPLY)
 
-        progressbar = self.builder.get_object("progress")
-        progressbar.set_show_text(True)
         update_progressbar(0)
-        progressbar.show()
-
         thread = Thread(target=thread_run, args=(self.app.discoverer, self.saved_map,))
         thread.start()
