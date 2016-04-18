@@ -53,6 +53,7 @@ class MainWindow(Gtk.ApplicationWindow):
         track_list.connect("insert", self.on_list_insert)
         tools.connect("equalizer-toggle", self.toggle_equalizer)
         tools.connect("repeat-toggle", lambda tools, toggle: app.queue.toggle_repeat(toggle))
+        tools.connect("shuffle-toggle", lambda tools, toggle: app.queue.toggle_shuffle(toggle))
         tools.connect("add-files", lambda tools: self.open_files(directory=False, append=True))
         tools.connect("add-dir", lambda tools: self.open_files(directory=True, append=True))
 

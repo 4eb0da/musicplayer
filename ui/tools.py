@@ -15,6 +15,7 @@ UI_INFO = """
 class Tools(Gtk.Toolbar):
     __gsignals__ = {
         'repeat_toggle': (GObject.SIGNAL_RUN_FIRST, None, (bool,)),
+        'shuffle_toggle': (GObject.SIGNAL_RUN_FIRST, None, (bool,)),
         'equalizer_toggle': (GObject.SIGNAL_RUN_FIRST, None, (bool,)),
         'add_files': (GObject.SIGNAL_RUN_FIRST, None, ()),
         'add_dir': (GObject.SIGNAL_RUN_FIRST, None, ())
@@ -50,6 +51,9 @@ class Tools(Gtk.Toolbar):
         self.repeat = self.create_tool_button("media-playlist-repeat", "Repeat")
         self.repeat.set_active(True)
         self.repeat.connect("clicked", lambda button: self.emit("repeat-toggle", button.get_active()))
+
+        self.shuffle = self.create_tool_button("media-playlist-shuffle", "Shuffle")
+        self.shuffle.connect("clicked", lambda button: self.emit("shuffle-toggle", button.get_active()))
 
         self.equalizer = self.create_tool_button("preferences-desktop-multimedia", "Equalizer")
         self.equalizer.connect("clicked", lambda button: self.emit("equalizer-toggle", button.get_active()))

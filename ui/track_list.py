@@ -96,17 +96,20 @@ class TrackList(Gtk.ScrolledWindow):
     def title_renderer(self, tree_column, cell, tree_model, iter, data):
         cell.set_property("text", tree_model[iter][0].name())
 
-    def on_queue_update(self, queue, tracks):
+    def on_queue_update(self, queue, tracks, update_type):
         self.store.clear()
         self.track_to_path.clear()
         self.tracks = tracks
-        if self.prev_playing_track not in tracks:
-            self.prev_playing_track = None
         for track in tracks:
             self.track_to_path[track] = self.store.get_path(
                 self.store.append([track, track is self.prev_playing_track, track.name()]))
         self.list_view.set_model(self.store)
         self.list_view.set_search_column(2)
+
+        if self.prev_playing_track not in tracks:
+            self.prev_playing_track = None
+        elif update_type == "shuffle":
+            self.list_view.set_cursor(self.track_to_path[self.prev_playing_track])
 
     def on_track_change(self, queue, track):
         if track:
