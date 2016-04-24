@@ -1,5 +1,6 @@
 import os
 
+
 class Track:
     def __init__(self, filename):
         self.filename = os.path.basename(filename)

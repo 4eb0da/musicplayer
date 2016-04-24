@@ -12,16 +12,19 @@ from ui.main_window import MainWindow
 from player.player import Player
 from player.queue import Queue
 from player.discoverer import Discoverer
+from player.settings import Settings
 
 GObject.threads_init()
 Gst.init("")
 
 
 class MusicPlayerApplication(Gtk.Application):
+    APP_NAME = "MusicPlayer"
+    APP_CONFIG_PATH = "musicplayer"
 
     def __init__(self):
         Gtk.Application.__init__(self)
-        GLib.set_application_name('MusicPlayer')
+        GLib.set_application_name(self.APP_NAME)
         self.win = None
         self.discoverer = None
         self.queue = None
@@ -29,6 +32,7 @@ class MusicPlayerApplication(Gtk.Application):
 
     def do_startup(self):
         Gtk.Application.do_startup(self)
+        self.settings = Settings(self)
         self.discoverer = Discoverer()
         self.player = Player(self)
         self.queue = Queue(self)

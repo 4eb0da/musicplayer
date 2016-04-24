@@ -20,8 +20,8 @@ class Queue(GObject.Object):
         self.current_track = None
         self.paused = False
         self.disable_change = False
-        self.repeat = True
-        self.shuffle = False
+        self.repeat = app.settings.getboolean("queue", "repeat", True)
+        self.shuffle = app.settings.getboolean("queue", "shuffle", False)
 
         app.player.connect("eof", lambda player: self.auto_next())
 
@@ -169,6 +169,8 @@ class Queue(GObject.Object):
 
     def toggle_repeat(self, repeat):
         self.repeat = repeat
+        self.app.settings.setboolean("queue", "repeat", repeat)
+        self.app.settings.save()
 
     def toggle_shuffle(self, shuffle):
         self.shuffle = shuffle
@@ -180,3 +182,6 @@ class Queue(GObject.Object):
             self.shuffled_list = self.current_list
 
         self.emit("update", self.shuffled_list, "shuffle")
+
+        self.app.settings.setboolean("queue", "shuffle", shuffle)
+        self.app.settings.save()

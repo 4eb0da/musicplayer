@@ -49,10 +49,11 @@ class Tools(Gtk.Toolbar):
         self.create_tool_button("gtk-justify-fill", "Playlist", playlist_popup)
 
         self.repeat = self.create_tool_button("media-playlist-repeat", "Repeat")
-        self.repeat.set_active(True)
+        self.repeat.set_active(app.queue.repeat)
         self.repeat.connect("clicked", lambda button: self.emit("repeat-toggle", button.get_active()))
 
         self.shuffle = self.create_tool_button("media-playlist-shuffle", "Shuffle")
+        self.shuffle.set_active(app.queue.shuffle)
         self.shuffle.connect("clicked", lambda button: self.emit("shuffle-toggle", button.get_active()))
 
         self.equalizer = self.create_tool_button("preferences-desktop-multimedia", "Equalizer")
