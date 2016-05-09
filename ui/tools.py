@@ -57,7 +57,8 @@ class Tools(Gtk.Toolbar):
         self.shuffle.connect("clicked", lambda button: self.emit("shuffle-toggle", button.get_active()))
 
         self.equalizer = self.create_tool_button("preferences-desktop-multimedia", "Equalizer")
-        self.equalizer.connect("clicked", lambda button: self.emit("equalizer-toggle", button.get_active()))
+        self.equalizer.set_active(app.settings.getboolean("ui", "tools.equalizer", False))
+        self.equalizer.connect("clicked", self.emit_equalizer)
 
     def add_actions(self, action_group):
         action_group.add_actions([
@@ -86,5 +87,7 @@ class Tools(Gtk.Toolbar):
         self.insert(button, -1)
         return button
 
-    def on_add_to_list(self, action):
-        print("Add to list")
+    def emit_equalizer(self, button):
+        is_active = button.get_active()
+        self.emit("equalizer-toggle", is_active)
+        self.app.settings.setboolean("ui", "tools.equalizer", is_active)

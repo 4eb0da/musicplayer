@@ -96,4 +96,5 @@ class Player(GObject.Object):
         self.volume.set_property("volume", volume)
 
     def set_equalizer(self, index, val):
+        self.init_gst()
         self.equalizer.set_property("band" + str(index), val)

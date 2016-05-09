@@ -1,12 +1,14 @@
-from gi.repository import Gtk, Gdk
-from ui.current_track import CurrentTrack
-from ui.track_list import TrackList
-from ui.controls import Controls
-from ui.tools import Tools
-from ui.equalizer import Equalizer
-from .util import keyboard
 from urllib.parse import urlparse
 from urllib.request import url2pathname
+
+from gi.repository import Gtk, Gdk
+
+from ui.controls import Controls
+from ui.current_track import CurrentTrack
+from ui.equalizer.equalizer import Equalizer
+from ui.tools import Tools
+from ui.track_list import TrackList
+from .util import keyboard
 
 UI_INFO = """
 <ui>
@@ -27,7 +29,7 @@ class MainWindow(Gtk.ApplicationWindow):
         Gtk.Window.__init__(self, title="MusicPlayer", application=app)
         self.app = app
 
-        self.set_default_size(350, 400)
+        self.set_default_size(350, 500)
 
         action_group = Gtk.ActionGroup("actions")
 
@@ -49,7 +51,9 @@ class MainWindow(Gtk.ApplicationWindow):
         self.equalizer = Equalizer(app)
         tools = Tools(app)
 
-        self.connect("show", lambda win: self.equalizer.hide())
+        if app.settings.getboolean("ui", "tools.equalizer", False) is False:
+            self.connect("show", lambda win: self.equalizer.hide())
+
         track_list.connect("insert", self.on_list_insert)
         tools.connect("equalizer-toggle", self.toggle_equalizer)
         tools.connect("repeat-toggle", lambda tools, toggle: app.queue.toggle_repeat(toggle))

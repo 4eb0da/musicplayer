@@ -170,7 +170,6 @@ class Queue(GObject.Object):
     def toggle_repeat(self, repeat):
         self.repeat = repeat
         self.app.settings.setboolean("queue", "repeat", repeat)
-        self.app.settings.save()
 
     def toggle_shuffle(self, shuffle):
         self.shuffle = shuffle
@@ -184,4 +183,3 @@ class Queue(GObject.Object):
         self.emit("update", self.shuffled_list, "shuffle")
 
         self.app.settings.setboolean("queue", "shuffle", shuffle)
-        self.app.settings.save()
