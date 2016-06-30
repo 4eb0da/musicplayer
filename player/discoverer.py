@@ -31,18 +31,15 @@ class Discoverer(GObject.Object):
                     self.condition.wait()
 
                 self.wait_idle()
-                items = [track for track in self.queue if not track.info]
-                self.queue = []
+                items = [track for track in self.queue[:self.PACK_LIMIT] if not track.info]
+                self.queue = self.queue[self.PACK_LIMIT:]
 
             pack = []
             for track in items:
                 file_info = taglib.File(track.fullpath)
                 track.info = TrackInfo(track.fullpath, file_info)
                 pack.append(track)
-                if len(pack) == self.PACK_LIMIT:
-                    GObject.idle_add(self.emit, "info", pack)
-                    pack = []
-                self.wait_idle()
+
             if len(pack):
                 GObject.idle_add(self.emit, "info", pack)
 
@@ -64,3 +61,12 @@ class Discoverer(GObject.Object):
         track.info.save(file_info, vals_dict)
         file_info.save()
         self.emit("info", [track])
+
+    def up_in_queue(self, tracks):
+        with self.condition:
+            for track in tracks:
+                if track not in self.queue:
+                    continue
+                index = self.queue.index(track)
+                self.queue[index:index + 1] = []
+                self.queue = [track] + self.queue

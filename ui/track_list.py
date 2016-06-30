@@ -30,6 +30,7 @@ class TrackList(Gtk.ScrolledWindow):
         self.release_handler = None
         self.drag_start_win = None
         self.press_event_copy = None
+        self.reorder_delay = None
 
         action_group = Gtk.ActionGroup("actions")
         self.add_actions(action_group)
@@ -72,6 +73,9 @@ class TrackList(Gtk.ScrolledWindow):
         app.queue.connect("update", self.on_queue_update)
         app.queue.connect("track", self.on_track_change)
         app.discoverer.connect("info", self.on_file_update)
+
+        vertical_scrollbar = self.list_view.get_vadjustment()
+        vertical_scrollbar.connect("value-changed", self.on_scroll)
 
     def add_actions(self, action_group):
         action_group.add_actions([
@@ -293,3 +297,18 @@ class TrackList(Gtk.ScrolledWindow):
 
         GObject.idle_add(show_dialog)
 
+    def on_scroll(self, scrollbar):
+        def reorder():
+            val = scrollbar.get_value()
+            page_height = scrollbar.get_page_size()
+            scroll_height = scrollbar.get_upper()
+            rows = len(self.store)
+            first = int(val * rows / scroll_height)
+            last = min(len(self.store) - 1, int((val + page_height) * rows / scroll_height))
+            tracks = [self.store[index][0] for index in range(first, last + 1) if not self.store[index][0].info]
+            if tracks:
+                self.app.discoverer.up_in_queue([self.store[index][0] for index in range(first, last + 1)])
+
+        if self.reorder_delay is not None:
+            GObject.source_remove(self.reorder_delay)
+        self.reorder_delay = GObject.timeout_add(50, reorder)
