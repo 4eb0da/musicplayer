@@ -18,7 +18,7 @@ class Player(GObject.Object):
         self.emit('play', track)
 
         self.init_gst()
-        self.open_file(track.fullpath)
+        self.open_file(track.fullpath if track else "")
 
     def init_gst(self):
         if self.__inited:
@@ -55,7 +55,8 @@ class Player(GObject.Object):
     def open_file(self, fullpath):
         self.pipeline.set_state(Gst.State.NULL)
         self.source.set_property('location', fullpath)
-        self.pipeline.set_state(Gst.State.PLAYING)
+        if fullpath:
+            self.pipeline.set_state(Gst.State.PLAYING)
 
     def on_message(self, bus, msg):
         struct = msg.get_structure()

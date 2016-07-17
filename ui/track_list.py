@@ -20,8 +20,8 @@ class TrackList(Gtk.ScrolledWindow):
     def __init__(self, app):
         Gtk.ScrolledWindow.__init__(self)
         self.app = app
-        self.tracks = []
         self.track_to_path = {}
+        self.last_correct_path_index = -1
         self.prev_playing_track = None
         self.drag_start_x = None
         self.drag_start_y = None
@@ -46,6 +46,8 @@ class TrackList(Gtk.ScrolledWindow):
         self.list_view = Gtk.TreeView(model=self.store)
         self.list_view.set_headers_visible(False)
         self.list_view.set_vscroll_policy(Gtk.ScrollablePolicy.MINIMUM)
+        self.list_view.set_model(self.store)
+        self.list_view.set_search_column(2)
         selection = self.list_view.get_selection()
         selection.set_mode(Gtk.SelectionMode.MULTIPLE)
         self.list_view.drag_dest_set(0, None, 0)
@@ -70,7 +72,8 @@ class TrackList(Gtk.ScrolledWindow):
 
         self.add(self.list_view)
 
-        app.queue.connect("update", self.on_queue_update)
+        app.queue.connect("insert", self.on_queue_insert)
+        app.queue.connect("delete", self.on_queue_delete)
         app.queue.connect("track", self.on_track_change)
         app.discoverer.connect("info", self.on_file_update)
 
@@ -100,27 +103,57 @@ class TrackList(Gtk.ScrolledWindow):
     def title_renderer(self, tree_column, cell, tree_model, iter, data):
         cell.set_property("text", tree_model[iter][0].name())
 
-    def on_queue_update(self, queue, tracks, update_type):
-        self.store.clear()
-        self.track_to_path.clear()
-        self.tracks = tracks
-        for track in tracks:
-            self.track_to_path[track] = self.store.get_path(
-                self.store.append([track, track is self.prev_playing_track, track.name()]))
-        self.list_view.set_model(self.store)
-        self.list_view.set_search_column(2)
+    def get_track_path(self, track):
+        if (track in self.track_to_path and
+                int(str(self.track_to_path[track])) > self.last_correct_path_index):
+            del self.track_to_path[track]
 
-        if self.prev_playing_track not in tracks:
-            self.prev_playing_track = None
-        elif update_type == "shuffle":
-            self.list_view.set_cursor(self.track_to_path[self.prev_playing_track])
+        if track not in self.track_to_path:
+            start_index = self.last_correct_path_index + 1
+            for index in range(start_index, len(self.store)):
+                iter_track = self.store[index][0]
+                self.track_to_path[iter_track] = Gtk.TreePath.new_from_string(str(index))
+                if iter_track is track:
+                    self.last_correct_path_index = index
+                    break
+
+        return self.track_to_path[track] if track in self.track_to_path else None
+
+    def on_queue_insert(self, queue, tracks, at):
+        for index, track in enumerate(tracks):
+            self.store.insert(at + index, [track, track is self.prev_playing_track, track.name()])
+        self.track_to_path.clear()
+        self.last_correct_path_index = -1
+        # self.last_correct_path_index = min(self.last_correct_path_index, at - 1)
+        if self.prev_playing_track in tracks:
+            self.list_view.set_cursor(self.get_track_path(self.prev_playing_track))
+
+    def on_queue_delete(self, queue, count, at):
+        selection = self.list_view.get_selection()
+        for index in range(at, at + count):
+            path = Gtk.TreePath.new_from_string(str(index))
+            if selection.path_is_selected(path):
+                selection.unselect_path(path)
+
+            track = self.store[index][0]
+            if track in self.track_to_path:
+                del self.track_to_path[track]
+
+        path = Gtk.TreePath.new_from_string(str(at))
+        for index in range(at, at + count):
+            self.store.remove(self.store.get_iter(path))
+
+        self.last_correct_path_index = min(self.last_correct_path_index, at - 1)
 
     def on_track_change(self, queue, track):
         if track:
-            self.list_view.set_cursor(self.track_to_path[track])
+            path = self.get_track_path(track)
+            self.list_view.set_cursor(path)
             if self.prev_playing_track is not None:
-                self.store[self.store.get_iter(self.track_to_path[self.prev_playing_track])][1] = False
-            iter = self.store.get_iter(self.track_to_path[track])
+                prev_path = self.get_track_path(self.prev_playing_track)
+                if prev_path:
+                    self.store[self.store.get_iter(prev_path)][1] = False
+            iter = self.store.get_iter(path)
             self.store[iter][1] = True
             self.store[iter][2] = track.name()
             self.prev_playing_track = track
@@ -131,15 +164,11 @@ class TrackList(Gtk.ScrolledWindow):
 
     def on_file_update(self, discoverer, pack):
         for track in pack:
-            if track in self.track_to_path:
-                path = self.track_to_path[track]
+            path = self.get_track_path(track)
+            if path:
                 iter = self.store.get_iter(path)
                 self.store[iter][0] = track
                 self.store[iter][2] = track.name()
-
-    def update_paths(self):
-        for index, row in enumerate(self.store):
-            self.track_to_path[row[1]] = Gtk.TreePath.new_from_string(str(index))
 
     def on_mouse_click(self, widget, event):
         if len(self.store) == 0:
@@ -255,9 +284,10 @@ class TrackList(Gtk.ScrolledWindow):
                 selection = self.list_view.get_selection()
                 store, list = selection.get_selected_rows()
 
-                result_pos = self.app.queue.reoder([int(str(path)) for path in list], insert_pos)
+                result_pos = self.app.queue.reorder([int(str(path)) for path in list], insert_pos)
 
                 # select reordered rows
+                selection.unselect_all()
                 for i in range(len(list)):
                     path = Gtk.TreePath.new_from_string(str(i + result_pos))
                     selection.select_path(path)
@@ -286,12 +316,12 @@ class TrackList(Gtk.ScrolledWindow):
         index = 0
 
         if len(tracks) == 1:
-            tracks = self.tracks
+            tracks = self.app.queue.get_tracks()
             index = int(str(list[0]))
 
         def show_dialog():
             props = TrackProps(self.app, tracks, index)
-            props.connect("change", lambda props, track: self.list_view.set_cursor(self.track_to_path[track]))
+            props.connect("change", lambda props, track: self.list_view.set_cursor(self.get_track_path(track)))
             props.run()
             props.destroy()
 

@@ -3,12 +3,14 @@ import gi
 from gi.repository import Gtk, GObject
 from .track import Track
 from .util import glob_music
+from .dirreader.dirreader import DirReader
 import random
 
 
 class Queue(GObject.Object):
     __gsignals__ = {
-        'update': (GObject.SIGNAL_RUN_FIRST, None, (object, str,)),
+        'insert': (GObject.SIGNAL_RUN_FIRST, None, (object, int,)),
+        'delete': (GObject.SIGNAL_RUN_FIRST, None, (int, int,)),
         'track': (GObject.SIGNAL_RUN_FIRST, None, (object,))
     }
 
@@ -22,17 +24,27 @@ class Queue(GObject.Object):
         self.disable_change = False
         self.repeat = app.settings.getboolean("queue", "repeat", True)
         self.shuffle = app.settings.getboolean("queue", "shuffle", False)
+        self.read_id = 0
+        self.flush_read_id = 0
+        self.reader = DirReader()
+
+        if self.shuffle:
+            self.shuffled_list = []
 
         app.player.connect("eof", lambda player: self.auto_next())
+        self.reader.connect("files", self.on_files_found)
 
     def __open_files(self, names, append=False, at=None):
         track_list = [Track(name) for name in names]
         if not append:
+            length = len(self.current_list)
             self.shuffled_list = self.current_list = []
+            self.emit("delete", length, 0)
+        was_empty = len(self.current_list) == 0
 
         self.__append_tracks(track_list, at)
 
-        if not append:
+        if not append or was_empty:
             if track_list:
                 self.current_track = self.shuffled_list[0]
                 self.paused = False
@@ -58,23 +70,50 @@ class Queue(GObject.Object):
             else:
                 self.current_list = self.shuffled_list
         else:
+            at = len(self.shuffled_list)
             self.shuffled_list += shuffled
+            if self.shuffle:
+                self.current_list += track_list
 
         self.app.discoverer.add(track_list)
-        self.emit("update", self.shuffled_list, "append")
+        self.emit("insert", shuffled, at)
 
     def open_files(self, files):
-        self.__open_files(glob_music(files))
+        if len(self.current_list):
+            self.remove(range(0, len(self.current_list)))
+
+        self.read_id += 1
+        self.flush_read_id = self.read_id
+        self.reader.open(files, self.read_id, True, -1)
 
     def append_files(self, files, at=None):
-        self.__open_files(glob_music(files), append=True, at=at)
+        # todo make "at" async
+        if at is not None:
+            self.__open_files(glob_music(files), append=True, at=at)
+            return
 
-    def reoder(self, from_indices, to_pos):
+        self.read_id += 1
+        # self.flush_read_id = self.read_id
+        self.reader.open(files, self.read_id, False, at=-1 if not at else at)
+
+    def on_files_found(self, reader, files, job_id, at):
+        if job_id < self.flush_read_id:
+            return
+
+        self.__open_files(files, append=True, at=None if at == -1 else at)
+
+    def get_tracks(self):
+        return self.shuffled_list
+
+    def reorder(self, from_indices, to_pos):
         tracks = []
         for index in from_indices:
             tracks.append(self.shuffled_list[index])
             if index < to_pos:
                 to_pos -= 1
+
+        for index in reversed(from_indices):
+            self.emit("delete", 1, index)
 
         from_indices.sort()
         from_indices.reverse()
@@ -84,7 +123,7 @@ class Queue(GObject.Object):
         self.shuffled_list = self.shuffled_list[:to_pos] + tracks + self.shuffled_list[to_pos:]
         if not self.shuffle:
             self.current_list = self.shuffled_list
-        self.emit("update", self.shuffled_list, "reorder")
+        self.emit("insert", tracks, to_pos)
 
         return to_pos
 
@@ -95,6 +134,9 @@ class Queue(GObject.Object):
 
         for index in indices:
             removed.add(index)
+
+        for index in reversed(indices):
+            self.emit("delete", 1, index)
 
         if self.shuffle:
             tracks = [self.shuffled_list[index] for index in indices]
@@ -112,20 +154,20 @@ class Queue(GObject.Object):
                 new_list.append(track)
 
         self.shuffled_list = new_list
+        if not self.shuffle:
+            self.current_list = self.shuffled_list
 
         if current_track_attempt is None and len(self.shuffled_list) > 0:
             current_track_attempt = self.shuffled_list[0]
 
-        self.emit("update", self.shuffled_list, "remove")
-
-        if current_track_attempt is not self.current_track and current_track_attempt is not None:
+        if current_track_attempt is not self.current_track:
             self.set_current(current_track_attempt)
 
     def set_current(self, track):
         if self.disable_change:
             return
 
-        self.paused = False
+        self.paused = not track
         self.current_track = track
         self.emit("track", self.current_track)
         self.app.player.play(self.current_track)
@@ -180,6 +222,7 @@ class Queue(GObject.Object):
         else:
             self.shuffled_list = self.current_list
 
-        self.emit("update", self.shuffled_list, "shuffle")
+        self.emit("delete", len(self.shuffled_list), 0)
+        self.emit("insert", self.shuffled_list, 0)
 
         self.app.settings.setboolean("queue", "shuffle", shuffle)

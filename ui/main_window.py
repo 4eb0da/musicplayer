@@ -134,8 +134,8 @@ class MainWindow(Gtk.ApplicationWindow):
         return [url2pathname(urlparse(p).path) for p in data.get_uris()]
 
     def on_list_insert(self, widget, data, insert_pos):
-        dirs = self.drag_get_dirs(data)
-        self.app.queue.append_files(dirs, insert_pos)
+        paths = self.drag_get_dirs(data)
+        self.app.queue.append_files(paths, insert_pos)
 
     def on_drop(self, widget, context, x, y, data, info, time):
         dirs = self.drag_get_dirs(data)

@@ -78,10 +78,19 @@ class CurrentTrack(Gtk.Box):
         self.current_track = track
         self.scale.set_value(0)
         self.scale.set_range(0, 60000)
+        self.scale.set_sensitive(True if track else False)
+        self.time.set_text("0:00 / 0:00")
         self.update_title()
         self.cover_button.hide()
 
     def update_title(self):
+        if not self.current_track:
+            self.name.set_text("")
+            self.name.set_tooltip_text("")
+            self.info.set_text("")
+            self.info.set_tooltip_text("")
+            return
+
         self.name.set_text(self.current_track.name() or "Unknown")
         self.name.set_tooltip_text(self.current_track.name())
         info = ""
