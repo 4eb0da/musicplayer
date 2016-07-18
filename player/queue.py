@@ -11,7 +11,10 @@ class Queue(GObject.Object):
     __gsignals__ = {
         'insert': (GObject.SIGNAL_RUN_FIRST, None, (object, int,)),
         'delete': (GObject.SIGNAL_RUN_FIRST, None, (int, int,)),
-        'track': (GObject.SIGNAL_RUN_FIRST, None, (object,))
+        'track': (GObject.SIGNAL_RUN_FIRST, None, (object,)),
+        'play_pause': (GObject.SIGNAL_RUN_FIRST, None, (bool,)),
+        'shuffle': (GObject.SIGNAL_RUN_FIRST, None, (bool,)),
+        'repeat': (GObject.SIGNAL_RUN_FIRST, None, (bool,))
     }
 
     def __init__(self, app):
@@ -53,6 +56,7 @@ class Queue(GObject.Object):
                 self.current_track = None
 
             self.emit("track", self.current_track)
+            self.emit("play_pause", True)
 
     def __append_tracks(self, track_list, at=None):
         if not track_list:
@@ -170,6 +174,7 @@ class Queue(GObject.Object):
         self.paused = not track
         self.current_track = track
         self.emit("track", self.current_track)
+        self.emit("play_pause", True)
         self.app.player.play(self.current_track)
 
     def auto_next(self):
@@ -199,9 +204,11 @@ class Queue(GObject.Object):
         if self.paused:
             self.paused = False
             self.app.player.resume()
+            self.emit("play_pause", True)
         else:
             self.paused = True
             self.app.player.pause()
+            self.emit("play_pause", False)
 
     def is_paused(self):
         return self.paused
@@ -212,6 +219,7 @@ class Queue(GObject.Object):
     def toggle_repeat(self, repeat):
         self.repeat = repeat
         self.app.settings.setboolean("queue", "repeat", repeat)
+        self.emit("repeat", repeat)
 
     def toggle_shuffle(self, shuffle):
         self.shuffle = shuffle
@@ -226,3 +234,4 @@ class Queue(GObject.Object):
         self.emit("insert", self.shuffled_list, 0)
 
         self.app.settings.setboolean("queue", "shuffle", shuffle)
+        self.emit("shuffle", shuffle)

@@ -21,6 +21,7 @@ class Controls(Gtk.Toolbar):
         self.next.connect("clicked", lambda button: self.app.queue.next())
 
         app.queue.connect("track", self.on_track)
+        app.queue.connect("play_pause", self.on_play_pause)
 
     def insert_spacer(self):
         separator = Gtk.SeparatorToolItem.new()
@@ -37,7 +38,6 @@ class Controls(Gtk.Toolbar):
 
     def on_play(self, button):
         self.app.queue.play_pause()
-        self.toggle_button(self.app.queue.is_paused())
 
     def toggle_button(self, is_paused):
         if is_paused:
@@ -52,4 +52,6 @@ class Controls(Gtk.Toolbar):
         self.previous.set_sensitive(has_track)
         self.play.set_sensitive(has_track)
         self.next.set_sensitive(has_track)
-        self.toggle_button(not has_track)
+
+    def on_play_pause(self, queue, play):
+        self.toggle_button(not play)

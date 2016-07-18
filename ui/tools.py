@@ -14,8 +14,6 @@ UI_INFO = """
 
 class Tools(Gtk.Toolbar):
     __gsignals__ = {
-        'repeat_toggle': (GObject.SIGNAL_RUN_FIRST, None, (bool,)),
-        'shuffle_toggle': (GObject.SIGNAL_RUN_FIRST, None, (bool,)),
         'equalizer_toggle': (GObject.SIGNAL_RUN_FIRST, None, (bool,)),
         'add_files': (GObject.SIGNAL_RUN_FIRST, None, ()),
         'add_dir': (GObject.SIGNAL_RUN_FIRST, None, ())
@@ -50,15 +48,18 @@ class Tools(Gtk.Toolbar):
 
         self.repeat = self.create_tool_button("media-playlist-repeat", "Repeat")
         self.repeat.set_active(app.queue.repeat)
-        self.repeat.connect("clicked", lambda button: self.emit("repeat-toggle", button.get_active()))
+        self.repeat.connect("clicked", lambda button: self.app.queue.toggle_repeat(button.get_active()))
 
         self.shuffle = self.create_tool_button("media-playlist-shuffle", "Shuffle")
         self.shuffle.set_active(app.queue.shuffle)
-        self.shuffle.connect("clicked", lambda button: self.emit("shuffle-toggle", button.get_active()))
+        self.shuffle.connect("clicked", lambda button: self.app.queue.toggle_shuffle(button.get_active()))
 
         self.equalizer = self.create_tool_button("preferences-desktop-multimedia", "Equalizer")
         self.equalizer.set_active(app.settings.getboolean("ui", "tools.equalizer", False))
         self.equalizer.connect("clicked", self.emit_equalizer)
+
+        self.app.queue.connect("shuffle", self.on_queue_shuffle)
+        self.app.queue.connect("repeat", self.on_queue_repeat)
 
     def add_actions(self, action_group):
         action_group.add_actions([
@@ -91,3 +92,9 @@ class Tools(Gtk.Toolbar):
         is_active = button.get_active()
         self.emit("equalizer-toggle", is_active)
         self.app.settings.setboolean("ui", "tools.equalizer", is_active)
+
+    def on_queue_shuffle(self, queue, shuffle):
+        self.shuffle.set_active(shuffle)
+
+    def on_queue_repeat(self, queue, repeat):
+        self.repeat.set_active(repeat)
