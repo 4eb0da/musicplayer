@@ -26,6 +26,10 @@ UI_INFO = """
       <separator />
       <menuitem action='MusicShuffle' accel='<Primary>u'/>
       <menuitem action='MusicRepeat' accel='<Primary>r'/>
+      <separator />
+      <menuitem action='MusicMute' accel='<Primary>m'/>
+      <menuitem action='MusicIncreaseVolume' accel='<Primary>Up'/>
+      <menuitem action='MusicDecreaseVolume' accel='<Primary>Down'/>
     </menu>
   </menubar>
 </ui>
@@ -39,6 +43,9 @@ class MainWindow(Gtk.ApplicationWindow):
         self.play_action = None
         self.shuffle_action = None
         self.repeat_action = None
+        self.mute_action = None
+        self.volume_up_action = None
+        self.volume_down_action = None
 
         self.set_default_size(350, 500)
 
@@ -70,6 +77,7 @@ class MainWindow(Gtk.ApplicationWindow):
         tools.connect("add-files", lambda tools: self.open_files(directory=False, append=True))
         tools.connect("add-dir", lambda tools: self.open_files(directory=True, append=True))
 
+        app.player.connect("volume_change", self.on_player_volume_change)
         app.queue.connect("play_pause", self.on_queue_play_pause)
         app.queue.connect("shuffle", self.on_queue_shuffle)
         app.queue.connect("repeat", self.on_queue_repeat)
@@ -99,9 +107,17 @@ class MainWindow(Gtk.ApplicationWindow):
             ("MusicPrev", Gtk.STOCK_MEDIA_PREVIOUS, None, "<Alt>Left", None,
              self.on_prev),
             ("MusicNext", Gtk.STOCK_MEDIA_NEXT, None, "<Alt>Right", None,
-             self.on_next)
+             self.on_next),
+            ("MusicIncreaseVolume", None, "_Increase Volume", "<Primary>Up", None,
+             self.on_volume_up),
+            ("MusicDecreaseVolume", None, "_Decrease Volume", "<Primary>Down", None,
+             self.on_volume_down)
         ])
         self.play_action = action_group.get_action("MusicPlay")
+        self.volume_up_action = action_group.get_action("MusicIncreaseVolume")
+        self.volume_up_action.set_sensitive(self.app.player.get_volume() < 1)
+        self.volume_down_action = action_group.get_action("MusicDecreaseVolume")
+        self.volume_down_action.set_sensitive(self.app.player.get_volume() > 0)
 
         self.shuffle_action = Gtk.ToggleAction("MusicShuffle", "Sh_uffle", None, None)
         self.shuffle_action.connect("toggled", self.on_shuffle)
@@ -112,6 +128,10 @@ class MainWindow(Gtk.ApplicationWindow):
         self.repeat_action.connect("toggled", self.on_repeat)
         self.repeat_action.set_active(self.app.queue.repeat)
         action_group.add_action_with_accel(self.repeat_action, "<Primary>r")
+
+        self.mute_action = Gtk.ToggleAction("MusicMute", "_Mute", None, None)
+        self.mute_action.connect("toggled", self.on_mute)
+        action_group.add_action_with_accel(self.mute_action, "<Primary>m")
 
     def create_ui_manager(self):
         uimanager = Gtk.UIManager()
@@ -175,6 +195,26 @@ class MainWindow(Gtk.ApplicationWindow):
 
     def on_repeat(self, widget):
         self.app.queue.toggle_repeat(widget.get_active())
+
+    def on_volume_up(self, widget):
+        if self.app.player.is_mute():
+            self.app.player.mute(False)
+
+        self.app.player.set_volume(min(1, self.app.player.get_volume() + 0.1))
+
+    def on_volume_down(self, widget):
+        if self.app.player.is_mute():
+            self.app.player.mute(False)
+
+        self.app.player.set_volume(max(0, self.app.player.get_volume() - 0.1))
+
+    def on_mute(self, widget):
+        self.app.player.mute(widget.get_active())
+
+    def on_player_volume_change(self, player, volume, mute):
+        self.mute_action.set_active(mute)
+        self.volume_up_action.set_sensitive(mute or volume < 1)
+        self.volume_down_action.set_sensitive(volume > 0)
 
     def on_drag_motion(self, widget, context, x, y, time):
         mask = keyboard.get_mask(self)

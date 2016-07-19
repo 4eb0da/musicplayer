@@ -51,6 +51,7 @@ class CurrentTrack(Gtk.Box):
 
         app.player.connect("play", self.on_track_change)
         app.player.connect("cover", self.on_cover)
+        app.player.connect("volume_change", self.on_player_volume_change)
         app.discoverer.connect("info", self.on_file_update)
         self.cover_button.connect("clicked", self.on_cover_press)
         # fix ubuntu 12.04 scale click working as step
@@ -141,9 +142,19 @@ class CurrentTrack(Gtk.Box):
         self.update_scale(pos)
 
     def on_volume_change(self, scale, value):
-        self.app.player.set_volume(value)
+        mute = self.app.player.is_mute()
+        volume = self.app.player.get_volume()
+        res_volume = 0 if mute else volume
+
+        if res_volume != value:
+            if self.app.player.is_mute():
+                self.app.player.mute(False)
+            self.app.player.set_volume(value)
 
     def on_cover(self, player, cover):
         self.full_cover = cover
         self.cover.set_from_pixbuf(self.scale_pixbuf(cover))
         self.cover_button.show()
+
+    def on_player_volume_change(self, player, volume, mute):
+        self.volume.set_value(0 if mute else volume)

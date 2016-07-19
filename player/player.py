@@ -5,7 +5,8 @@ class Player(GObject.Object):
     __gsignals__ = {
         'play': (GObject.SIGNAL_RUN_FIRST, None, (object,)),
         'eof': (GObject.SIGNAL_RUN_FIRST, None, ()),
-        'cover': (GObject.SIGNAL_RUN_FIRST, None, (object,))
+        'cover': (GObject.SIGNAL_RUN_FIRST, None, (object,)),
+        'volume_change': (GObject.SIGNAL_RUN_FIRST, None, (float,bool,))
     }
 
     def __init__(self, app):
@@ -95,6 +96,17 @@ class Player(GObject.Object):
 
     def set_volume(self, volume):
         self.volume.set_property("volume", volume)
+        self.emit("volume_change", volume, self.volume.get_property("mute"))
+
+    def get_volume(self):
+        return self.volume.get_property("volume")
+
+    def mute(self, mute):
+        self.volume.set_property("mute", mute)
+        self.emit("volume_change", self.volume.get_property("volume"), mute)
+
+    def is_mute(self):
+        return self.volume.get_property("mute")
 
     def set_equalizer(self, index, val):
         self.init_gst()
