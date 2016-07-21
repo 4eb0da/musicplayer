@@ -200,8 +200,11 @@ class Queue(GObject.Object):
             cur = len(self.shuffled_list) - 1
         self.set_current(self.shuffled_list[cur])
 
-    def play_pause(self):
-        if self.paused:
+    def play_pause(self, play=None):
+        if play is None:
+            play = self.paused
+
+        if play:
             self.paused = False
             self.app.player.resume()
             self.emit("play_pause", True)
