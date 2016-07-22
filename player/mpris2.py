@@ -5,15 +5,22 @@
 import dbus
 import dbus.service
 import os
+import tempfile
+import random
+import string
+from gi.repository import GdkPixbuf
 
 
 class Mpris2(dbus.service.Object):
     BASE_IFACE = "org.mpris.MediaPlayer2"
     PLAYER_IFACE = "org.mpris.MediaPlayer2.Player"
+    MAX_IMAGE_SIZE = 120
 
     def __init__(self, app):
         self.__app = app
         self.__current_track = None
+        self.__temp_dir = tempfile.mkdtemp("musicplayer")
+        self.__cover = None
         self.__metadata = None
         self.__playback_status = "Stopped"
         self.__loop_status = "None"
@@ -30,6 +37,7 @@ class Mpris2(dbus.service.Object):
         app.queue.connect("shuffle", self.__on_shuffle)
         app.queue.connect("repeat", self.__on_repeat)
         app.player.connect("volume_change", self.__on_volume_change)
+        app.player.connect("cover", self.__on_cover)
         app.discoverer.connect("info", self.__on_file_update)
 
     def __update_track(self):
@@ -46,6 +54,7 @@ class Mpris2(dbus.service.Object):
             "xesam:title": title or "Unknown",
             "xesam:artist": [artist or ""],
             "xesam:album": album or "",
+            "mpris:artUrl": self.__cover or "",
         }, signature="sv", variant_level=1)
 
         self.PropertiesChanged(self.PLAYER_IFACE,
@@ -57,6 +66,7 @@ class Mpris2(dbus.service.Object):
 
     def __on_track(self, queue, track):
         self.__current_track = track
+        self.__cover = None
         self.__update_track()
 
     def __on_play_pause(self, queue, play):
@@ -68,7 +78,7 @@ class Mpris2(dbus.service.Object):
         for track in pack:
             if self.__current_track == track:
                 self.__update_track()
-                break
+                return
 
     def __on_shuffle(self, queue, shuffle):
         self.__shuffle = shuffle
@@ -87,13 +97,39 @@ class Mpris2(dbus.service.Object):
         self.PropertiesChanged(self.PLAYER_IFACE,
                                dbus.Dictionary({"Volume": self.__volume}, "sv", variant_level=1), [])
 
+    def __on_cover(self, player, cover):
+        path = str(self.__temp_dir) + "/" + ''.join(random.choice(string.ascii_lowercase) for i in range(10)) + ".png"
+        self.__scale_pixbuf(cover).savev(path, "png", [], [])
+        self.__cover = "file://" + path
+        self.__update_track()
+
+    def __scale_pixbuf(self, pixbuf):
+        width = pixbuf.get_width()
+        height = pixbuf.get_height()
+        size = max(width, height)
+
+        if size > self.MAX_IMAGE_SIZE:
+            scale = self.MAX_IMAGE_SIZE / size
+            scaled_width = width * scale
+            scaled_height = height * scale
+            pixbuf = pixbuf.scale_simple(scaled_width, scaled_height, GdkPixbuf.InterpType.HYPER)
+
+        return pixbuf
+
     @dbus.service.method(dbus.PROPERTIES_IFACE, in_signature='ss', out_signature='v')
     def Get(self, interface, prop):
         return self.GetAll(interface)[prop]
 
     @dbus.service.method(dbus.PROPERTIES_IFACE, in_signature='ssv')
     def Set(self, interface, prop, value):
-        pass
+        if prop == "PlaybackStatus":
+            self.__app.queue.play_pause(True if value == "Playing" else False)
+        elif prop == "LoopStatus":
+            self.__app.queue.toggle_repeat(True if value == "Playlist" else False)
+        elif prop == "Shuffle":
+            self.__app.queue.toggle_shuffle(bool(value))
+        elif prop == "Volume":
+            self.__app.player.set_volume(float(value))
 
     @dbus.service.method(dbus.PROPERTIES_IFACE, in_signature='s', out_signature='a{sv}')
     def GetAll(self, interface):

@@ -16,6 +16,7 @@ from player.discoverer import Discoverer
 from player.settings import Settings
 from player.equalizer import Equalizer
 from player.mpris2 import Mpris2
+from player.gnome_keys import GnomeKeys
 
 GObject.threads_init()
 Gst.init("")
@@ -36,6 +37,7 @@ class MusicPlayerApplication(Gtk.Application):
         self.equalizer = None
         self.queue = None
         self.mpris2 = None
+        self.gnome_keys = None
 
     def do_startup(self):
         Gtk.Application.do_startup(self)
@@ -45,6 +47,7 @@ class MusicPlayerApplication(Gtk.Application):
         self.equalizer = Equalizer(self)
         self.queue = Queue(self)
         self.mpris2 = Mpris2(self)
+        self.gnome_keys = GnomeKeys(self)
 
         self.win = MainWindow(self)
 
