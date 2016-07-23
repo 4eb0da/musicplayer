@@ -27,6 +27,8 @@ class Mpris2(dbus.service.Object):
         self.__shuffle = app.queue.shuffle
         self.__volume = 1
 
+        self.__listeners = {}
+
         name = dbus.service.BusName("org.mpris.MediaPlayer2.musicplayer.instance" + str(os.getpid()),
                                     bus=dbus.SessionBus())
         dbus.service.Object.__init__(self, name, "/org/mpris/MediaPlayer2")
@@ -39,6 +41,20 @@ class Mpris2(dbus.service.Object):
         app.player.connect("volume_change", self.__on_volume_change)
         app.player.connect("cover", self.__on_cover)
         app.discoverer.connect("info", self.__on_file_update)
+
+    # i can't derive from GObject (because of metaclass conflict), so...
+    def connect(self, name, listener):
+        if name not in self.__listeners:
+            self.__listeners[name] = []
+
+        self.__listeners[name].append(listener)
+
+    def emit(self, name):
+        if name not in self.__listeners:
+            return
+
+        for listener in self.__listeners[name]:
+            listener(self)
 
     def __update_track(self):
         track = self.__current_track
@@ -182,3 +198,7 @@ class Mpris2(dbus.service.Object):
     @dbus.service.method(PLAYER_IFACE)
     def Play(self):
         self.__app.queue.play_pause(True)
+
+    @dbus.service.method(BASE_IFACE)
+    def Raise(self):
+        self.emit("raise")

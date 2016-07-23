@@ -62,6 +62,9 @@ class MainWindow(Gtk.ApplicationWindow):
         self.drag_dest_add_uri_targets()
         self.connect("drag-motion", self.on_drag_motion)
         self.connect("drag-data-received", self.on_drop)
+        self.connect("focus-in-event", self.on_focus_in)
+        self.connect("focus-out-event", self.on_focus_out)
+        app.integration.connect("raise", self.on_raise)
 
         current_track = CurrentTrack(app)
         controls = Controls(app)
@@ -244,3 +247,12 @@ class MainWindow(Gtk.ApplicationWindow):
             self.equalizer.show()
         else:
             self.equalizer.hide()
+
+    def on_focus_in(self, win, event):
+        self.app.integration.toggle_focused(True)
+
+    def on_focus_out(self, win, event):
+        self.app.integration.toggle_focused(False)
+
+    def on_raise(self, integration):
+        self.present()
