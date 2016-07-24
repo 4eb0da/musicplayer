@@ -8,19 +8,17 @@ import os
 import tempfile
 import random
 import string
-from gi.repository import GdkPixbuf
 
 
 class Mpris2(dbus.service.Object):
     BASE_IFACE = "org.mpris.MediaPlayer2"
     PLAYER_IFACE = "org.mpris.MediaPlayer2.Player"
-    MAX_IMAGE_SIZE = 120
 
     def __init__(self, app):
         self.__app = app
         self.__current_track = None
+        self.__current_cover = None
         self.__temp_dir = tempfile.mkdtemp("musicplayer")
-        self.__cover = None
         self.__metadata = None
         self.__playback_status = "Stopped"
         self.__loop_status = "None"
@@ -34,13 +32,10 @@ class Mpris2(dbus.service.Object):
         dbus.service.Object.__init__(self, name, "/org/mpris/MediaPlayer2")
         self.__update_track()
 
-        app.queue.connect("track", self.__on_track)
         app.queue.connect("play_pause", self.__on_play_pause)
         app.queue.connect("shuffle", self.__on_shuffle)
         app.queue.connect("repeat", self.__on_repeat)
         app.player.connect("volume_change", self.__on_volume_change)
-        app.player.connect("cover", self.__on_cover)
-        app.discoverer.connect("info", self.__on_file_update)
 
     # i can't derive from GObject (because of metaclass conflict), so...
     def connect(self, name, listener):
@@ -70,7 +65,7 @@ class Mpris2(dbus.service.Object):
             "xesam:title": title or "Unknown",
             "xesam:artist": [artist or ""],
             "xesam:album": album or "",
-            "mpris:artUrl": self.__cover or "",
+            "mpris:artUrl": self.__current_cover or "",
         }, signature="sv", variant_level=1)
 
         self.PropertiesChanged(self.PLAYER_IFACE,
@@ -80,21 +75,21 @@ class Mpris2(dbus.service.Object):
                                    "CanPause": bool(self.__current_track)
                                }, "sv", variant_level=1), [])
 
-    def __on_track(self, queue, track):
+    def update_track(self, track, cover):
         self.__current_track = track
-        self.__cover = None
+        if cover:
+            path = str(self.__temp_dir) + "/" + ''.join(
+                random.choice(string.ascii_lowercase) for i in range(10)) + ".jpg"
+            cover.savev(path, "jpeg", [], [])
+            self.__current_cover = "file://" + path
+        else:
+            self.__current_cover = None
         self.__update_track()
 
     def __on_play_pause(self, queue, play):
         self.__playback_status = "Playing" if play else "Paused"
         self.PropertiesChanged(self.PLAYER_IFACE,
                                dbus.Dictionary({"PlaybackStatus": self.__playback_status}, "sv", variant_level=1), [])
-
-    def __on_file_update(self, discoverer, pack):
-        for track in pack:
-            if self.__current_track == track:
-                self.__update_track()
-                return
 
     def __on_shuffle(self, queue, shuffle):
         self.__shuffle = shuffle
@@ -112,25 +107,6 @@ class Mpris2(dbus.service.Object):
         self.__volume = volume
         self.PropertiesChanged(self.PLAYER_IFACE,
                                dbus.Dictionary({"Volume": self.__volume}, "sv", variant_level=1), [])
-
-    def __on_cover(self, player, cover):
-        path = str(self.__temp_dir) + "/" + ''.join(random.choice(string.ascii_lowercase) for i in range(10)) + ".png"
-        self.__scale_pixbuf(cover).savev(path, "png", [], [])
-        self.__cover = "file://" + path
-        self.__update_track()
-
-    def __scale_pixbuf(self, pixbuf):
-        width = pixbuf.get_width()
-        height = pixbuf.get_height()
-        size = max(width, height)
-
-        if size > self.MAX_IMAGE_SIZE:
-            scale = self.MAX_IMAGE_SIZE / size
-            scaled_width = width * scale
-            scaled_height = height * scale
-            pixbuf = pixbuf.scale_simple(scaled_width, scaled_height, GdkPixbuf.InterpType.HYPER)
-
-        return pixbuf
 
     @dbus.service.method(dbus.PROPERTIES_IFACE, in_signature='ss', out_signature='v')
     def Get(self, interface, prop):
