@@ -1,4 +1,5 @@
 # https://specifications.freedesktop.org/mpris-spec/latest/
+# https://www.freedesktop.org/wiki/Specifications/mpris-spec/metadata/
 # https://dbus.freedesktop.org/doc/dbus-python/doc/tutorial.html
 
 
@@ -12,6 +13,7 @@ import string
 
 class Mpris2(dbus.service.Object):
     BASE_IFACE = "org.mpris.MediaPlayer2"
+    OBJECT_PATH = "/org/mpris/MediaPlayer2"
     PLAYER_IFACE = "org.mpris.MediaPlayer2.Player"
 
     def __init__(self, app):
@@ -24,14 +26,15 @@ class Mpris2(dbus.service.Object):
         self.__loop_status = "None"
         self.__shuffle = app.queue.shuffle
         self.__volume = 1
+        self.__bus = dbus.SessionBus()
 
         self.__listeners = {}
 
-        name = dbus.service.BusName("org.mpris.MediaPlayer2.musicplayer.instance" + str(os.getpid()),
-                                    bus=dbus.SessionBus())
-        dbus.service.Object.__init__(self, name, "/org/mpris/MediaPlayer2")
+        name = dbus.service.BusName("org.mpris.MediaPlayer2.musicplayer.instance" + str(os.getpid()), bus=self.__bus)
+        dbus.service.Object.__init__(self, name, self.OBJECT_PATH)
         self.__update_track()
 
+        app.queue.connect("start", self.__on_start)
         app.queue.connect("play_pause", self.__on_play_pause)
         app.queue.connect("shuffle", self.__on_shuffle)
         app.queue.connect("repeat", self.__on_repeat)
@@ -51,21 +54,50 @@ class Mpris2(dbus.service.Object):
         for listener in self.__listeners[name]:
             listener(self)
 
+    def __on_start(self, queue):
+        if not self.__app.settings.getboolean("integration", "autostop", True):
+            return
+
+        for name in self.__bus.list_names():
+            if "org.mpris.MediaPlayer2." in name and "org.mpris.MediaPlayer2.musicplayer" not in name:
+                player = self.__bus.get_object(name, self.OBJECT_PATH)
+                if player.Get(self.PLAYER_IFACE, "PlaybackStatus", dbus_interface=dbus.PROPERTIES_IFACE) == "Playing":
+                    player_iface = dbus.Interface(player, dbus_interface=self.PLAYER_IFACE)
+                    player_iface.PlayPause()
+
     def __update_track(self):
         track = self.__current_track
         title = track.name() if track else ""
+        uri = "file://" + track.fullpath if track else ""
+        length = 0
         artist = ""
         album = ""
+        comment = ""
+        composer = ""
+        disk = ""
+        genre = ""
 
         if track and track.info:
             artist = track.info.artist
             album = track.info.album
+            # mpris:length in microseconds
+            length = track.info.audio["duration"] * pow(10, 6)
+            comment = track.info.comment
+            composer = track.info.composer
+            disk = track.info.disc
+            genre = track.info.genre
 
         self.__metadata = dbus.Dictionary({
+            "xesam:url": uri,
             "xesam:title": title or "Unknown",
             "xesam:artist": [artist or ""],
             "xesam:album": album or "",
+            "xesam:comment": comment,
+            "xesam:composer": composer,
+            "xesam:discNumber": disk,
+            "xesam:genre": genre,
             "mpris:artUrl": self.__current_cover or "",
+            "mpris:length": length,
         }, signature="sv", variant_level=1)
 
         self.PropertiesChanged(self.PLAYER_IFACE,

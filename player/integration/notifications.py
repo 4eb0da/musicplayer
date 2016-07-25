@@ -5,6 +5,7 @@ class Notifications:
     APP_NAME = "musicplayer"
 
     def __init__(self, app):
+        self.__app = app
         self.__focused = False
         self.__current_track = None
         self.__current_cover = None
@@ -21,7 +22,7 @@ class Notifications:
         self.__update_track()
 
     def __update_track(self):
-        if self.__focused:
+        if self.__focused or not self.__app.settings.getboolean("integration", "notifications", True):
             return
 
         if not self.__notification:

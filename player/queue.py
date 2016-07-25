@@ -9,6 +9,7 @@ import random
 
 class Queue(GObject.Object):
     __gsignals__ = {
+        'start': (GObject.SIGNAL_RUN_FIRST, None, ()),
         'insert': (GObject.SIGNAL_RUN_FIRST, None, (object, int,)),
         'delete': (GObject.SIGNAL_RUN_FIRST, None, (int, int,)),
         'track': (GObject.SIGNAL_RUN_FIRST, None, (object,)),
@@ -57,6 +58,7 @@ class Queue(GObject.Object):
 
             self.emit("track", self.current_track)
             self.emit("play_pause", True)
+            self.emit("start")
 
     def __append_tracks(self, track_list, at=None):
         if not track_list:
