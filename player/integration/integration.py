@@ -33,6 +33,9 @@ class Integration(GObject.Object):
     def toggle_focused(self, focused):
         self.__notifications.toggle_focused(focused)
 
+    def cleanup(self):
+        self.__mpris.cleanup()
+
     def __on_track(self, queue, track):
         self.__current_track = track
         self.__current_cover = None

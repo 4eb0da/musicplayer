@@ -107,6 +107,13 @@ class Mpris2(dbus.service.Object):
                                    "CanPause": bool(self.__current_track)
                                }, "sv", variant_level=1), [])
 
+    def cleanup(self):
+        self.PropertiesChanged(self.PLAYER_IFACE,
+                               dbus.Dictionary({
+                                   "PlaybackStatus": "Stopped",
+                                   "Metadata": dbus.Dictionary({}, signature="sv", variant_level=1),
+                               }, "sv", variant_level=1), [])
+
     def update_track(self, track, cover):
         self.__current_track = track
         if cover:

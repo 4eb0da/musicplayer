@@ -64,6 +64,7 @@ class MainWindow(Gtk.ApplicationWindow):
         self.connect("drag-data-received", self.on_drop)
         self.connect("focus-in-event", self.on_focus_in)
         self.connect("focus-out-event", self.on_focus_out)
+        self.connect("delete-event", self.on_delete)
         app.integration.connect("raise", self.on_raise)
 
         current_track = CurrentTrack(app)
@@ -253,6 +254,9 @@ class MainWindow(Gtk.ApplicationWindow):
 
     def on_focus_out(self, win, event):
         self.app.integration.toggle_focused(False)
+
+    def on_delete(self, win, event):
+        self.app.integration.cleanup()
 
     def on_raise(self, integration):
         self.present()
