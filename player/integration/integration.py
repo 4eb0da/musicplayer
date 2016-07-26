@@ -35,6 +35,7 @@ class Integration(GObject.Object):
 
     def cleanup(self):
         self.__mpris.cleanup()
+        self.__notifications.cleanup()
 
     def __on_track(self, queue, track):
         self.__current_track = track
