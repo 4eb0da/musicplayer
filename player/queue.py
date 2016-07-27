@@ -36,6 +36,7 @@ class Queue(GObject.Object):
             self.shuffled_list = []
 
         app.player.connect("eof", lambda player: self.auto_next())
+        app.player.connect("error", self.on_error)
         self.reader.connect("files", self.on_files_found)
 
     def __open_files(self, names, append=False, at=None):
@@ -101,6 +102,10 @@ class Queue(GObject.Object):
         self.read_id += 1
         # self.flush_read_id = self.read_id
         self.reader.open(files, self.read_id, False, at=-1 if not at else at)
+
+    def on_error(self, player):
+        self.current_track.has_error = True
+        self.auto_next()
 
     def on_files_found(self, reader, files, job_id, at):
         if job_id < self.flush_read_id:

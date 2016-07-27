@@ -36,8 +36,11 @@ class Discoverer(GObject.Object):
 
             pack = []
             for track in items:
-                file_info = taglib.File(track.fullpath)
-                track.info = TrackInfo(track.fullpath, file_info)
+                try:
+                    file_info = taglib.File(track.fullpath)
+                    track.info = TrackInfo(track.fullpath, file_info)
+                except:
+                    track.has_error = True
                 pack.append(track)
 
             if len(pack):

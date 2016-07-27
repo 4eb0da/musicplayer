@@ -98,6 +98,8 @@ class TrackList(Gtk.ScrolledWindow):
         icon = None
         if tree_model[iter][1]:
             icon = "media-playback-start-symbolic"
+        elif tree_model[iter][0].has_error:
+            icon = "process-stop"
         cell.set_property("icon-name", icon)
 
     def title_renderer(self, tree_column, cell, tree_model, iter, data):

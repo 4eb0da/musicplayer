@@ -5,6 +5,7 @@ class Player(GObject.Object):
     __gsignals__ = {
         'play': (GObject.SIGNAL_RUN_FIRST, None, (object,)),
         'eof': (GObject.SIGNAL_RUN_FIRST, None, ()),
+        'error': (GObject.SIGNAL_RUN_FIRST, None, ()),
         'cover': (GObject.SIGNAL_RUN_FIRST, None, (object,)),
         'volume_change': (GObject.SIGNAL_RUN_FIRST, None, (float,bool,))
     }
@@ -16,7 +17,7 @@ class Player(GObject.Object):
         self.__inited = False
 
     def play(self, track):
-        self.emit('play', track)
+        self.emit("play", track)
 
         self.init_gst()
         self.open_file(track.fullpath if track else "")
@@ -30,16 +31,16 @@ class Player(GObject.Object):
         # Create GStreamer pipeline
         self.pipeline = Gst.Pipeline()
 
-        self.source = Gst.ElementFactory.make('filesrc', 'source')
-        decodebin = Gst.ElementFactory.make('decodebin', 'decodebin')
-        audioconvert = Gst.ElementFactory.make('audioconvert', 'audioconvert')
-        self.volume = Gst.ElementFactory.make('volume', 'volume')
+        self.source = Gst.ElementFactory.make("filesrc", "source")
+        decodebin = Gst.ElementFactory.make("decodebin", "decodebin")
+        audioconvert = Gst.ElementFactory.make("audioconvert", "audioconvert")
+        self.volume = Gst.ElementFactory.make("volume", "volume")
         self.equalizer = Gst.ElementFactory.make("equalizer-10bands", "equalizer-10bands")
-        audiosink = Gst.ElementFactory.make('autoaudiosink', 'autoaudiosink')
+        audiosink = Gst.ElementFactory.make("autoaudiosink", "autoaudiosink")
 
         def on_pad_added(decodebin, pad):
-            pad.link(audioconvert.get_static_pad('sink'))
-        decodebin.connect('pad-added', on_pad_added)
+            pad.link(audioconvert.get_static_pad("sink"))
+        decodebin.connect("pad-added", on_pad_added)
 
         [self.pipeline.add(k) for k in [self.source, decodebin, audioconvert, self.volume, self.equalizer, audiosink]]
 
@@ -51,20 +52,22 @@ class Player(GObject.Object):
         # Create bus to get events from GStreamer pipeline
         self.bus = self.pipeline.get_bus()
         self.bus.add_signal_watch()
-        self.bus.connect('message', self.on_message)
+        self.bus.connect("message", self.on_message)
 
     def open_file(self, fullpath):
         self.pipeline.set_state(Gst.State.NULL)
-        self.source.set_property('location', fullpath)
+        self.source.set_property("location", fullpath)
         if fullpath:
             self.pipeline.set_state(Gst.State.PLAYING)
 
     def on_message(self, bus, msg):
         struct = msg.get_structure()
-        if msg.type == Gst.MessageType.EOS:
+        if msg.type == Gst.MessageType.ERROR:
+            self.emit("error")
+        elif msg.type == Gst.MessageType.EOS:
             self.emit("eof")
-        elif msg.type == Gst.MessageType.TAG and msg.parse_tag() and struct.has_field('taglist'):
-            taglist = struct.get_value('taglist')
+        elif msg.type == Gst.MessageType.TAG and msg.parse_tag() and struct.has_field("taglist"):
+            taglist = struct.get_value("taglist")
             for x in range(taglist.n_tags()):
                 name = taglist.nth_tag_name(x)
                 if name == "preview-image" or name == "image":
