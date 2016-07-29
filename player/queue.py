@@ -10,6 +10,7 @@ import random
 class Queue(GObject.Object):
     __gsignals__ = {
         'start': (GObject.SIGNAL_RUN_FIRST, None, ()),
+        'stop': (GObject.SIGNAL_RUN_FIRST, None, ()),
         'insert': (GObject.SIGNAL_RUN_FIRST, None, (object, int,)),
         'delete': (GObject.SIGNAL_RUN_FIRST, None, (int, int,)),
         'track': (GObject.SIGNAL_RUN_FIRST, None, (object,)),
@@ -172,7 +173,11 @@ class Queue(GObject.Object):
             current_track_attempt = self.shuffled_list[0]
 
         if current_track_attempt is not self.current_track:
-            self.set_current(current_track_attempt)
+            if current_track_attempt is not None and current_track_attempt.has_error:
+                self.current_track = current_track_attempt
+                self.next()
+            else:
+                self.set_current(current_track_attempt)
 
     def set_current(self, track):
         if self.disable_change:
@@ -181,30 +186,31 @@ class Queue(GObject.Object):
         self.paused = not track
         self.current_track = track
         self.emit("track", self.current_track)
-        self.emit("play_pause", True)
+        self.emit("play_pause", bool(track))
         self.app.player.play(self.current_track)
 
     def auto_next(self):
         self.next(allow_at_end=self.repeat)
 
     def next(self, allow_at_end=True):
-        if self.disable_change:
-            return
-        cur = self.shuffled_list.index(self.current_track)
-        cur += 1
-        if cur >= len(self.shuffled_list):
-            if not allow_at_end:
-                return
-            cur = 0
-        self.set_current(self.shuffled_list[cur])
+        self.__find_next_track(1, allow_at_end=allow_at_end)
 
     def previous(self):
-        if self.disable_change:
+        self.__find_next_track(-1)
+
+    def __find_next_track(self, direction, allow_at_end=True):
+        length = len(self.shuffled_list)
+        if self.disable_change or length == 1:
             return
-        cur = self.shuffled_list.index(self.current_track)
-        cur -= 1
-        if cur < 0:
-            cur = len(self.shuffled_list) - 1
+
+        start = cur = self.shuffled_list.index(self.current_track)
+        cur = (cur + direction) % length
+        while self.shuffled_list[cur].has_error:
+            cur = (cur + direction) % length
+            if cur == start or not allow_at_end and cur + 1 == length:
+                self.set_current(None)
+                return
+
         self.set_current(self.shuffled_list[cur])
 
     def play_pause(self, play=None):

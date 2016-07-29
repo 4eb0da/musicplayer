@@ -87,18 +87,21 @@ class Mpris2(dbus.service.Object):
             disk = track.info.disc
             genre = track.info.genre
 
-        self.__metadata = dbus.Dictionary({
-            "xesam:url": uri,
-            "xesam:title": title or "Unknown",
-            "xesam:artist": [artist or ""],
-            "xesam:album": album or "",
-            "xesam:comment": comment,
-            "xesam:composer": composer,
-            "xesam:discNumber": disk,
-            "xesam:genre": genre,
-            "mpris:artUrl": self.__current_cover or "",
-            "mpris:length": length,
-        }, signature="sv", variant_level=1)
+        if track:
+            self.__metadata = dbus.Dictionary({
+                "xesam:url": uri,
+                "xesam:title": title or "Unknown",
+                "xesam:artist": [artist or ""],
+                "xesam:album": album or "",
+                "xesam:comment": comment,
+                "xesam:composer": composer,
+                "xesam:discNumber": disk,
+                "xesam:genre": genre,
+                "mpris:artUrl": self.__current_cover or "",
+                "mpris:length": length,
+            }, signature="sv", variant_level=1)
+        else:
+            self.__metadata = dbus.Dictionary({}, signature="sv", variant_level=1)
 
         self.PropertiesChanged(self.PLAYER_IFACE,
                                dbus.Dictionary({
