@@ -151,14 +151,16 @@ class TrackList(Gtk.ScrolledWindow):
         if track:
             path = self.get_track_path(track)
             self.list_view.set_cursor(path)
-            if self.prev_playing_track is not None:
-                prev_path = self.get_track_path(self.prev_playing_track)
-                if prev_path:
-                    self.store[self.store.get_iter(prev_path)][1] = False
+
             iter = self.store.get_iter(path)
             self.store[iter][1] = True
             self.store[iter][2] = track.name()
-            self.prev_playing_track = track
+
+        if self.prev_playing_track is not None:
+            prev_path = self.get_track_path(self.prev_playing_track)
+            if prev_path:
+                self.store[self.store.get_iter(prev_path)][1] = False
+        self.prev_playing_track = track
 
     def on_track_activate(self, view, path, column):
         track = self.store[self.store.get_iter(path)][0]
@@ -181,7 +183,10 @@ class TrackList(Gtk.ScrolledWindow):
             if event.button == Gdk.BUTTON_SECONDARY:
                 # if right click activate a pop-up menu
                 selection = self.list_view.get_selection()
-                path, column, cell_x, cell_y = self.list_view.get_path_at_pos(event.x, event.y)
+                found = self.list_view.get_path_at_pos(event.x, event.y)
+                if not found:
+                    return True
+                path, column, cell_x, cell_y = found
                 if not selection.path_is_selected(path):
                     selection.unselect_all()
                     selection.select_path(path)
@@ -191,7 +196,10 @@ class TrackList(Gtk.ScrolledWindow):
 
                 return True
             elif event.button == Gdk.BUTTON_PRIMARY:
-                path, column, cell_x, cell_y = self.list_view.get_path_at_pos(event.x, event.y)
+                found = self.list_view.get_path_at_pos(event.x, event.y)
+                if not found:
+                    return True
+                path, column, cell_x, cell_y = found
                 selection = self.list_view.get_selection()
                 has_modifier = event.state & Gdk.ModifierType.CONTROL_MASK or event.state & Gdk.ModifierType.SHIFT_MASK
                 if has_modifier:
@@ -266,10 +274,12 @@ class TrackList(Gtk.ScrolledWindow):
         is_external_add = self.is_external_add()
         # if reorder or append
         if is_self_source or is_external_add:
-            path, pos = self.list_view.get_dest_row_at_pos(x, y)
-            pos = self.fix_drag_pos(pos)
+            found = self.list_view.get_dest_row_at_pos(x, y)
+            if found:
+                path, pos = found
+                pos = self.fix_drag_pos(pos)
 
-            self.list_view.set_drag_dest_row(path, pos)
+                self.list_view.set_drag_dest_row(path, pos)
             Gdk.drag_status(context, Gdk.DragAction.COPY if is_external_add else Gdk.DragAction.MOVE, time)
             return True
 
@@ -278,9 +288,13 @@ class TrackList(Gtk.ScrolledWindow):
         is_external_add = self.is_external_add()
         # if reorder or append
         if is_self_source or is_external_add:
-            path, pos = self.list_view.get_dest_row_at_pos(x, y)
-            pos = self.fix_drag_pos(pos)
-            insert_pos = int(str(path)) + (1 if pos is Gtk.TreeViewDropPosition.AFTER else 0)
+            found = self.list_view.get_dest_row_at_pos(x, y)
+            if found:
+                path, pos = found
+                pos = self.fix_drag_pos(pos)
+                insert_pos = int(str(path)) + (1 if pos is Gtk.TreeViewDropPosition.AFTER else 0)
+            else:
+                insert_pos = None
 
             if is_self_source:
                 selection = self.list_view.get_selection()
@@ -305,7 +319,7 @@ class TrackList(Gtk.ScrolledWindow):
             return True
 
     def on_drag_drop_data(self, widget, context, x, y, data, info, time):
-        self.emit("insert", data, self.drag_insert_pos)
+        self.emit("insert", data, self.drag_insert_pos if self.drag_insert_pos else -1)
 
     def on_remove_from_list(self, action):
         store, list = self.list_view.get_selection().get_selected_rows()

@@ -46,11 +46,10 @@ class Queue(GObject.Object):
             length = len(self.current_list)
             self.shuffled_list = self.current_list = []
             self.emit("delete", length, 0)
-        was_empty = len(self.current_list) == 0
 
         self.__append_tracks(track_list, at)
 
-        if not append or was_empty:
+        if not append or not self.current_track:
             if track_list:
                 self.current_track = self.shuffled_list[0]
                 self.paused = False
@@ -105,7 +104,8 @@ class Queue(GObject.Object):
         self.reader.open(files, self.read_id, False, at=-1 if not at else at)
 
     def on_error(self, player):
-        self.current_track.has_error = True
+        if self.current_track:
+            self.current_track.has_error = True
         self.auto_next()
 
     def on_files_found(self, reader, files, job_id, at):
@@ -118,6 +118,9 @@ class Queue(GObject.Object):
         return self.shuffled_list
 
     def reorder(self, from_indices, to_pos):
+        if to_pos is None:
+            to_pos = len(self.shuffled_list)
+
         tracks = []
         for index in from_indices:
             tracks.append(self.shuffled_list[index])
@@ -203,12 +206,21 @@ class Queue(GObject.Object):
         if self.disable_change or length == 1:
             return
 
+        if len(self.shuffled_list) == 0:
+            return
+
+        if not self.current_track:
+            self.set_current(self.shuffled_list[0])
+
         start = cur = self.shuffled_list.index(self.current_track)
         cur = (cur + direction) % length
         while self.shuffled_list[cur].has_error:
             cur = (cur + direction) % length
             if cur == start or not allow_at_end and cur + 1 == length:
-                self.set_current(None)
+                if self.current_track.has_error or cur != start:
+                    self.set_current(None)
+                else:
+                    self.set_current(self.current_track)
                 return
 
         self.set_current(self.shuffled_list[cur])
@@ -218,9 +230,10 @@ class Queue(GObject.Object):
             play = self.paused
 
         if play:
-            self.paused = False
-            self.app.player.resume()
-            self.emit("play_pause", True)
+            if self.current_track:
+                self.paused = False
+                self.app.player.resume()
+                self.emit("play_pause", True)
         else:
             self.paused = True
             self.app.player.pause()

@@ -234,7 +234,7 @@ class MainWindow(Gtk.ApplicationWindow):
 
     def on_list_insert(self, widget, data, insert_pos):
         paths = self.drag_get_dirs(data)
-        self.app.queue.append_files(paths, insert_pos)
+        self.app.queue.append_files(paths, None if insert_pos == -1 else insert_pos)
 
     def on_drop(self, widget, context, x, y, data, info, time):
         dirs = self.drag_get_dirs(data)

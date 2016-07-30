@@ -57,7 +57,7 @@ class DirReader(GObject.Object):
                 job_id = self.queue[0]["job_id"]
                 at = self.queue[0]["at"]
                 self.queue = self.queue[1:]
-                if job_id < self.flush_queue:
+                if self.flush_queue is not None and job_id < self.flush_queue:
                     return
 
         pack = []
@@ -74,7 +74,7 @@ class DirReader(GObject.Object):
                         GObject.idle_add(self.emit, "files", pack, job_id, at)
                         pack = []
                         with self.condition:
-                            if job_id < self.flush_queue:
+                            if self.flush_queue is not None and job_id < self.flush_queue:
                                 return
                         self.wait_idle()
         elif filter_music(path):

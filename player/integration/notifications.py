@@ -25,7 +25,7 @@ class Notifications:
         Notify.uninit()
 
     def __update_track(self):
-        if self.__focused or not self.__app.settings.getboolean("integration", "notifications", True):
+        if self.__focused or not self.__current_track or not self.__app.settings.getboolean("integration", "notifications", True):
             return
 
         if not self.__notification:
