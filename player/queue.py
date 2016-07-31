@@ -9,8 +9,7 @@ import random
 
 class Queue(GObject.Object):
     __gsignals__ = {
-        'start': (GObject.SIGNAL_RUN_FIRST, None, ()),
-        'stop': (GObject.SIGNAL_RUN_FIRST, None, ()),
+        'update': (GObject.SIGNAL_RUN_FIRST, None, (bool,)),
         'insert': (GObject.SIGNAL_RUN_FIRST, None, (object, int,)),
         'delete': (GObject.SIGNAL_RUN_FIRST, None, (int, int,)),
         'track': (GObject.SIGNAL_RUN_FIRST, None, (object,)),
@@ -47,6 +46,8 @@ class Queue(GObject.Object):
             self.shuffled_list = self.current_list = []
             self.emit("delete", length, 0)
 
+        empty = len(self.shuffled_list) == 0
+
         self.__append_tracks(track_list, at)
 
         if not append or not self.current_track:
@@ -57,9 +58,11 @@ class Queue(GObject.Object):
             else:
                 self.current_track = None
 
+            self.paused = not bool(self.current_track)
             self.emit("track", self.current_track)
             self.emit("play_pause", True)
-            self.emit("start")
+
+        self.emit("update", empty or not append)
 
     def __append_tracks(self, track_list, at=None):
         if not track_list:
@@ -87,7 +90,7 @@ class Queue(GObject.Object):
 
     def open_files(self, files):
         if len(self.current_list):
-            self.remove(range(0, len(self.current_list)))
+            self.__remove(range(0, len(self.current_list)))
 
         self.read_id += 1
         self.flush_read_id = self.read_id
@@ -117,6 +120,9 @@ class Queue(GObject.Object):
     def get_tracks(self):
         return self.shuffled_list
 
+    def get_unshuffled_tracks(self):
+        return self.current_list
+
     def reorder(self, from_indices, to_pos):
         if to_pos is None:
             to_pos = len(self.shuffled_list)
@@ -139,10 +145,15 @@ class Queue(GObject.Object):
         if not self.shuffle:
             self.current_list = self.shuffled_list
         self.emit("insert", tracks, to_pos)
+        self.emit("update", False)
 
         return to_pos
 
     def remove(self, indices):
+        self.__remove(indices)
+        self.emit("update", False)
+
+    def __remove(self, indices):
         new_list = []
         removed = set()
         current_track_attempt = self.current_track

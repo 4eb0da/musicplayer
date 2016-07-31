@@ -7,6 +7,9 @@ UI_INFO = """
   <popup name='PopupMenu'>
     <menuitem action='AddFilesToList' />
     <menuitem action='AddDirToList' />
+    <separator />
+    <menuitem action='PrevHistory' />
+    <menuitem action='NextHistory' />
   </popup>
 </ui>
 """
@@ -23,6 +26,8 @@ class Tools(Gtk.Toolbar):
         Gtk.Toolbar.__init__(self)
 
         self.app = app
+        self.__prev_history_action = None
+        self.__next_history_action = None
 
         action_group = Gtk.ActionGroup("actions")
         self.add_actions(action_group)
@@ -61,11 +66,20 @@ class Tools(Gtk.Toolbar):
         self.app.queue.connect("shuffle", self.on_queue_shuffle)
         self.app.queue.connect("repeat", self.on_queue_repeat)
 
+        self.app.history.connect("change_current", self.__on__history_change)
+
     def add_actions(self, action_group):
         action_group.add_actions([
             ("AddFilesToList", None, "Add files to list", None, None, lambda action: self.emit("add_files")),
-            ("AddDirToList", None, "Add directory to list", None, None, lambda action: self.emit("add_dir"))
+            ("AddDirToList", None, "Add directory to list", None, None, lambda action: self.emit("add_dir")),
+            ("PrevHistory", None, "Previous track list", None, None, self.__on_prev_history),
+            ("NextHistory", None, "Next track list", None, None, self.__on_next_history),
         ])
+
+        self.__prev_history_action = action_group.get_action("PrevHistory")
+        self.__prev_history_action.set_sensitive(len(self.app.history) > 0)
+        self.__next_history_action = action_group.get_action("NextHistory")
+        self.__next_history_action.set_sensitive(False)
 
     def create_ui_manager(self):
         uimanager = Gtk.UIManager()
@@ -98,3 +112,21 @@ class Tools(Gtk.Toolbar):
 
     def on_queue_repeat(self, queue, repeat):
         self.repeat.set_active(repeat)
+
+    def __on_prev_history(self, widget):
+        current = self.app.history.get_current()
+        if current == 0:
+            return
+
+        self.app.history.set_current(current - 1)
+
+    def __on_next_history(self, widget):
+        current = self.app.history.get_current()
+        if current + 1 == len(self.app.history):
+            return
+
+        self.app.history.set_current(current + 1)
+
+    def __on__history_change(self, history, current):
+        self.__prev_history_action.set_sensitive(current > 0)
+        self.__next_history_action.set_sensitive(current + 1 < len(history))

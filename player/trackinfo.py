@@ -9,8 +9,8 @@ class TrackInfo:
     LETTERS = LETTERS.encode("cp1251").decode("cp1252")
 
     @staticmethod
-    def convert(string):
-        if re.search("[" + TrackInfo.LETTERS + "]", string):
+    def convert(fullpath, string):
+        if fullpath.endswith(".mp3") and re.search("[" + TrackInfo.LETTERS + "]", string):
             try:
                 return string.encode("cp1252").decode("cp1251")
             except:
@@ -23,12 +23,12 @@ class TrackInfo:
         def get(name):
             return name in tags and len(tags[name]) and tags[name][0] or ""
 
-        self.title = self.convert(get("TITLE")) or os.path.basename(fullpath)
-        self.album = self.convert(get("ALBUM") or "")
-        self.artist = self.convert(get("ARTIST") or "")
-        self.composer = self.convert(get("COMPOSER") or "")
-        self.album_artist = self.convert(get("ALBUMARTIST") or "")
-        self.author = self.convert(get("AUTHOR") or "")
+        self.title = self.convert(fullpath, get("TITLE")) or os.path.basename(fullpath)
+        self.album = self.convert(fullpath, get("ALBUM") or "")
+        self.artist = self.convert(fullpath, get("ARTIST") or "")
+        self.composer = self.convert(fullpath, get("COMPOSER") or "")
+        self.album_artist = self.convert(fullpath, get("ALBUMARTIST") or "")
+        self.author = self.convert(fullpath, get("AUTHOR") or "")
         # todo fix numbers
         self.number = get("TRACKNUMBER")
         self.disc = get("DISCNUMBER")
@@ -41,7 +41,7 @@ class TrackInfo:
         for field in ["COMMENT", "COMMENT:ID3V1", "SUBTITLE"]:
             val = get(field)
             if val:
-                val = self.convert(val)
+                val = self.convert(fullpath, val)
                 self.comment_source = field
                 self.comment = val
                 break

@@ -10,7 +10,8 @@ from .trackinfo import TrackInfo
 
 class Discoverer(GObject.Object):
     __gsignals__ = {
-        'info': (GObject.SIGNAL_RUN_FIRST, None, (object,))
+        'info': (GObject.SIGNAL_RUN_FIRST, None, (object,)),
+        'end': (GObject.SIGNAL_RUN_FIRST, None, ())
     }
 
     PACK_LIMIT = 20
@@ -28,6 +29,7 @@ class Discoverer(GObject.Object):
         while True:
             with self.condition:
                 if not(len(self.queue)):
+                    GObject.idle_add(self.emit, "end")
                     self.condition.wait()
 
                 self.wait_idle()

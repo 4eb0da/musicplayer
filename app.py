@@ -16,6 +16,7 @@ from player.discoverer import Discoverer
 from player.settings import Settings
 from player.equalizer import Equalizer
 from player.integration.integration import Integration
+from player.history import History
 
 GObject.threads_init()
 Gst.init("")
@@ -35,6 +36,7 @@ class MusicPlayerApplication(Gtk.Application):
         self.player = None
         self.equalizer = None
         self.queue = None
+        self.history = None
         self.integration = None
 
     def do_startup(self):
@@ -44,6 +46,7 @@ class MusicPlayerApplication(Gtk.Application):
         self.player = Player(self)
         self.equalizer = Equalizer(self)
         self.queue = Queue(self)
+        self.history = History(self)
         self.integration = Integration(self)
 
         self.win = MainWindow(self)

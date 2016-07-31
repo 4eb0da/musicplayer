@@ -34,7 +34,7 @@ class Mpris2(dbus.service.Object):
         dbus.service.Object.__init__(self, name, self.OBJECT_PATH)
         self.__update_track()
 
-        app.queue.connect("start", self.__on_start)
+        app.queue.connect("update", self.__on_update)
         app.queue.connect("play_pause", self.__on_play_pause)
         app.queue.connect("shuffle", self.__on_shuffle)
         app.queue.connect("repeat", self.__on_repeat)
@@ -54,8 +54,8 @@ class Mpris2(dbus.service.Object):
         for listener in self.__listeners[name]:
             listener(self)
 
-    def __on_start(self, queue):
-        if not self.__app.settings.getboolean("integration", "autostop", True):
+    def __on_update(self, queue, was_cleared):
+        if not self.__app.settings.getboolean("integration", "autostop", True) or not was_cleared:
             return
 
         for name in self.__bus.list_names():

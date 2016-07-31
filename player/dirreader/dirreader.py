@@ -25,6 +25,9 @@ class DirReader(GObject.Object):
         self.thread.start()
 
     def open(self, dirs, job_id, empty, at):
+        if len(dirs) == 0:
+            return
+
         with self.condition:
             if empty:
                 self.queue = []
